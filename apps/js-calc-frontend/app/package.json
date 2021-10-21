@@ -1,0 +1,21 @@
+{
+  "name": "calc-frontend-node",
+  "version": "1.0.0",
+  "description": "calculator frontend node",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": {
+    "name": "dzielke"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "applicationinsights": "^2.1.4",
+    "dotenv-extended": "^2.9.0",
+    "swagger-ui-express": "^4.1.6",
+    "redis": "^3.1.2",
+    "request": "^2.88.2"
+  }
+}
