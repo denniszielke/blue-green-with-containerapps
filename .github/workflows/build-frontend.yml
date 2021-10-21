@@ -8,17 +8,17 @@ on:
   push:
     branches: [ main ]
     paths:
-      - apps/js-calc-backend/**
+      - apps/js-calc-frontend/**
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 defaults:
   run:
-    working-directory: apps/js-calc-backend
+    working-directory: apps/js-calc-frontend
 
 env:
-  IMAGE_NAME: js-calc-backend
+  IMAGE_NAME: js-calc-frontend
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
