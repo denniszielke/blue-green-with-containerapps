@@ -1,0 +1,58 @@
+# This is a basic workflow to help you get started with Actions
+
+name: deploy-full-blue-green
+# https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_run
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+    paths:
+      - apps/js-calc-backend/**
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/js-calc-backend
+
+env:
+  IMAGE_NAME: js-calc-backend
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  deploy_ota:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install CLI-beta
+      run: |
+        cd ../..
+        CWD="$(pwd)"
+        python3 -m venv oidc-venv
+        . oidc-venv/bin/activate
+        echo "activated environment" 
+        python3 -m pip install --upgrade pip
+        echo "started installing cli beta" 
+        pip install -q --extra-index-url https://azcliprod.blob.core.windows.net/beta/simple/ azure-cli
+        echo "installed cli beta"    
+        echo "$CWD/oidc-venv/bin" >> $GITHUB_PATH
+
+    # Login to Azure 
+    - name: Azure Login Xpirit
+      uses: azure/login@v1.4.0
+      with:
+        client-id: ${{ secrets.AZURE_CLIENTID }}
+        tenant-id: ${{ secrets.AZURE_TENANTID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTIONID }}
+
+    - name: 'Run az commands'
+      run: |
+        az group create -l westeurope -n rg-d
