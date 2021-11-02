@@ -152,15 +152,6 @@ if [ "$WORKER_FRONTEND_APP_ID" == "" ]; then
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION" \
      --target-port 8080  
 
-    # az group deployment create \
-    #     --name $FRONTEND_APP_ID \
-    #     --resource-group $RESOURCE_GROUP \
-    #     --template-file "wa/frontend_template.json" \
-    #     --parameters "environment_id=$CONTAINER_APP_ENV_ID" \
-    #     --parameters "location=North Central US (Stage)" \
-    #     --parameters "instrumentation_key=$AI_INSTRUMENTATION_KEY" \
-    #     --parameters "backend_endpoint=$WORKER_BACKEND_FQDN"
-
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
     az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
@@ -178,7 +169,7 @@ else
     echo "deploying new revision of $WORKER_FRONTEND_APP_ID of $WORKER_FRONTEND_APP_VERSION using $WORKER_BACKEND_FQDN" 
 
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i denniszielke/js-calc-frontend:latest \
+     -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 250Mi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
@@ -188,8 +179,6 @@ else
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION" \
      --target-port 8080  
-
-    #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
