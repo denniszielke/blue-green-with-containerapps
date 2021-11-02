@@ -40,7 +40,6 @@ jobs:
 
     - name: 'Run az commands'
       run: |
-        LOCATION=$(az group show -n {{ secrets.RESOURCE_GROUP }} --query location -o tsv)
         az deployment group create -g ${{ secrets.RESOURCE_GROUP }} -f ./deploy/main.bicep \
           -p \
             minReplicas=0
