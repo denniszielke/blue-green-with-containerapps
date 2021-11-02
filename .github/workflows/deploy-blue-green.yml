@@ -35,6 +35,45 @@ jobs:
     name: Deploy
     steps:
     - uses: actions/checkout@v2
+
+    - name: Build image
+      run: |
+        docker build . --file $BACKEND_APP_NAME/Dockerfile --tag $BACKEND_APP_NAME --label "runnumber=${GITHUB_RUN_ID}"
+        docker build . --file $FRONTEND_APP_NAME/Dockerfile --tag $FRONTEND_APP_NAME --label "runnumber=${GITHUB_RUN_ID}"
+
+    - name: Log in to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Push image
+      run: |
+        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$IMAGE_NAME
+        # Change all uppercase to lowercase
+        BACKEND_IMAGE_ID=$(echo $BACKEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
+        # Strip git ref prefix from version
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        # Strip "v" prefix from tag name
+        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+        # Use Docker `latest` tag convention
+        [ "$VERSION" == "master" ] && VERSION=latest
+        echo BACKEND_IMAGE_ID=$BACKEND_IMAGE_ID
+        echo VERSION=$VERSION
+        docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:$VERSION
+        docker push $BACKEND_IMAGE_ID:$VERSION
+
+        FRONDEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$IMAGE_NAME
+        # Change all uppercase to lowercase
+        FRONDEND_IMAGE_ID=$(echo $FRONDEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
+        # Strip git ref prefix from version
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        # Strip "v" prefix from tag name
+        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+        # Use Docker `latest` tag convention
+        [ "$VERSION" == "master" ] && VERSION=latest
+        echo FRONDEND_IMAGE_ID=$FRONDEND_IMAGE_ID
+        echo VERSION=$VERSION
+        docker tag $FRONTEND_APP_NAME $FRONDEND_IMAGE_ID:$VERSION
+        docker push $FRONDEND_IMAGE_ID:$VERSION
+
     - name: Install CLI-beta
       run: |
         cd ../..
