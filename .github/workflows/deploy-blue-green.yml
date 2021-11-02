@@ -30,9 +30,12 @@ env:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  deploy_ota:
+  build:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: deploy
+    permissions:
+      packages: write
+      contents: read
     steps:
     - uses: actions/checkout@v2
 
@@ -48,33 +51,19 @@ jobs:
 
     - name: Push image
       run: |
-        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME
-        # Change all uppercase to lowercase
-        BACKEND_IMAGE_ID=$(echo $BACKEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
-        # Strip git ref prefix from version
-        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        # Strip "v" prefix from tag name
-        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-        # Use Docker `latest` tag convention
-        [ "$VERSION" == "master" ] && VERSION=latest
-        echo BACKEND_IMAGE_ID=$BACKEND_IMAGE_ID
-        echo VERSION=$VERSION
-        docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:$VERSION
-        docker push $BACKEND_IMAGE_ID:$VERSION
+        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME:${GITHUB_RUN_ID}
+        docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
+        docker push $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
 
-        FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME
-        # Change all uppercase to lowercase
-        FRONTEND_IMAGE_ID=$(echo $FRONTEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
-        # Strip git ref prefix from version
-        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        # Strip "v" prefix from tag name
-        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-        # Use Docker `latest` tag convention
-        [ "$VERSION" == "master" ] && VERSION=latest
-        echo FRONTEND_IMAGE_ID=$FRONTEND_IMAGE_ID
-        echo VERSION=$VERSION
-        docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:$VERSION
-        docker push $FRONTEND_IMAGE_ID:$VERSION
+        FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME:${GITHUB_RUN_ID}
+        docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
+        docker push $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    needs: [build]
+    steps:
 
     - name: Install CLI-beta
       run: |

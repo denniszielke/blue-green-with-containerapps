@@ -1,26 +1,20 @@
 #!/bin/sh
 
-#
-# wget https://raw.githubusercontent.com/denniszielke/container_demos/master/scripts/deploy_wa.sh
-# chmod +x ./deploy_wa.sh
-# bash ./deploy_wa.sh
-#
-
 set -e
 
-#az extension remove -n workerapp
-#az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/workerapp-0.1.3-py2.py3-none-any.whl -y
+az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl-y
 
 # calculator properties
 FRONTEND_APP_ID="calc-frontend"
 BACKEND_APP_ID="http-calcback"
-VERSION="1.8.19" # version tag showing up in app
+
 COLOR="green" # color highlighting
 LAGGY="true" # if true the backend will cause random delays
 BUGGY="false" # if true the backend will randomly generate 500 errors
 
 # infrastructure deployment properties
 DEPLOYMENT_NAME="$1" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+VERSION="$2" # version tag showing up in app
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
 CA_LOCATION="Central US EUAP"
@@ -33,6 +27,8 @@ if [ "$CONTAINER_APP_ENV_ID" == "" ]; then
 else
     echo "container app env $CONTAINER_APP_ENV_ID already exists"
 fi
+
+echo "deploying $VERSION"
 
 exit
 
