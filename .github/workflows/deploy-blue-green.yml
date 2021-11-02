@@ -32,7 +32,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     runs-on: ubuntu-latest
-    name: deploy
+    name: build
     permissions:
       packages: write
       contents: read
@@ -51,11 +51,11 @@ jobs:
 
     - name: Push image
       run: |
-        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME:${GITHUB_RUN_ID}
+        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME
         docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
         docker push $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
 
-        FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME:${GITHUB_RUN_ID}
+        FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME
         docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
         docker push $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
 
@@ -87,5 +87,5 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTIONID }}
 
     - name: 'Run scripts'
-      run: cd $GITHUB_WORKSPACE/scripts && chmod +x ./deploy.sh && ./deploy.sh ${{ secrets.RESOURCE_GROUP }}
+      run: cd $GITHUB_WORKSPACE/scripts && chmod +x ./deploy.sh && ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} ghcr.io/${{ github.repository_owner }}/container-apps/
       shell: bash

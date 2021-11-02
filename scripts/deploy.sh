@@ -5,8 +5,8 @@ set -e
 az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl-y
 
 # calculator properties
-FRONTEND_APP_ID="calc-frontend"
-BACKEND_APP_ID="http-calcback"
+FRONTEND_APP_ID="js-calc-frontend"
+BACKEND_APP_ID="js-calc-backend"
 
 COLOR="green" # color highlighting
 LAGGY="true" # if true the backend will cause random delays
@@ -15,6 +15,7 @@ BUGGY="false" # if true the backend will randomly generate 500 errors
 # infrastructure deployment properties
 DEPLOYMENT_NAME="$1" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 VERSION="$2" # version tag showing up in app
+REGISTRY="$3"
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
 CA_LOCATION="Central US EUAP"
@@ -28,7 +29,7 @@ else
     echo "container app env $CONTAINER_APP_ENV_ID already exists"
 fi
 
-echo "deploying $VERSION"
+echo "deploying $VERSION from $REGISTRY"
 
 exit
 
