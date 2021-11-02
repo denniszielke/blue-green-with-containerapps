@@ -64,7 +64,7 @@ jobs:
 
     needs: [build]
     steps:
-
+    - uses: actions/checkout@v2
     - name: Install CLI-beta
       run: |
         cd ../..

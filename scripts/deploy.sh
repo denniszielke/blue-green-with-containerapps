@@ -18,7 +18,7 @@ VERSION="$2" # version tag showing up in app
 REGISTRY="$3"
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
-CA_LOCATION="Central US EUAP"
+CONTAINERAPPS_LOCATION="Central US EUAP"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 
 
@@ -41,17 +41,8 @@ if [ "$WORKER_BACKEND_APP_ID" == "" ]; then
 
     echo "creating worker app $BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION"
 
-    # az group deployment create \
-    #     --name $BACKEND_APP_ID \
-    #     --resource-group $RESOURCE_GROUP \
-    #     --template-file "wa/backend_template.json" \
-    #     --parameters "environment_id=$CONTAINER_APP_ENV_ID" \
-    #     --parameters "location=North Central US (Stage)" \
-    #     --parameters "instrumentation_key=$AI_INSTRUMENTATION_KEY" \
-    #     --parameters "version=backend blue - 1.0.2"
-
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i denniszielke/js-calc-backend:latest \
+     -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
      --cpu 0.5 --memory 250Mi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
@@ -79,7 +70,7 @@ else
     echo "deploying new revision of $WORKER_BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION" 
 
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i denniszielke/js-calc-backend:latest \
+     -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
      --cpu 0.5 --memory 250Mi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
@@ -150,7 +141,7 @@ if [ "$WORKER_FRONTEND_APP_ID" == "" ]; then
     echo "creating worker app $FRONTEND_APP_ID of $WORKER_FRONTEND_APP_VERSION using $WORKER_BACKEND_FQDN"
 
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i denniszielke/js-calc-frontend:latest \
+     -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 250Mi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
@@ -255,23 +246,3 @@ else
 fi
 
 echo "frontend running on $WORKER_FRONTEND_FQDN"
-
-echo "creating application insights release annotation"
-# https://docs.microsoft.com/en-us/azure/azure-monitor/app/annotations
-ID=$(uuidgen)
-ANNOTATIONNAME="release $VERSION"
-EVENTTIME=$(date '+%Y-%m-%dT%H:%M:%S')  #$(printf '%(%Y-%m-%dT%H:%M:%S)T')
-CATEGORY="Deployment"
-RESOURCE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/microsoft.insights/components/$LOG_ANALYTICS_WORKSPACE_NAME-ai"
-
-JSON_STRING=$( jq -n -c \
-                  --arg id "$ID" \
-                  --arg an "$ANNOTATIONNAME" \
-                  --arg et "$EVENTTIME" \
-                  --arg cg "$CATEGORY" \
-                  '{Id: $id, AnnotationName: $an, EventTime: $et, Category: $cg}' ) 
-                  
-JSON_STRING=$(echo $JSON_STRING | tr '"' "'")
-echo $JSON_STRING
-
-az rest --method put --uri "$RESOURCE/Annotations?api-version=2015-05-01" --body "$JSON_STRING"
