@@ -97,6 +97,6 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANTID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTIONID }}
 
-    - name: 'Run az commands'
-      run: |
-        az group create -l westeurope -n rg-d
+    - name: 'Run scripts'
+      run: cd $GITHUB_WORKSPACE/scripts && chmod +x ./deploy.sh && ./deploy.sh ${{ secrets.RESOURCE_GROUP }}
+      shell: bash
