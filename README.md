@@ -1,5 +1,28 @@
 # Try Out Development Containers: Node.js
 
+
+## Set up GitHub Actions
+
+https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation-create-trust-github?tabs=azure-portal
+
+```
+DEPLOYMENT_NAME="dzca11cgithub" 
+RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
+LOCATION="eastus"
+AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
+GHUSER="denniszielke"
+GHREPO="blue-green-with-containerapps"
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+
+az group create -n $RESOURCE_GROUP -l $LOCATION -o none
+
+AZURE_CLIENTID=$(az ad sp create-for-rbac --name "$DEPLOYMENT_NAME" --role contributor --scopes "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP" -o json | jq -r '.appId')
+
+
+az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENTID/federatedIdentityCredentials" --body '{"name":"$DEPLOYMENT_NAME","issuer":"https://token.actions.githubusercontent.com/","subject":"$GHUSER/$GHREPO:branch:main","description":"Testing","audiences":["api://AzureADTokenExchange"]}'
+
+```
+
 A **development container** is a running [Docker](https://www.docker.com) container with a well-defined tool/runtime stack and its prerequisites. You can try out development containers with **[GitHub Codespaces](https://github.com/features/codespaces)** or **[Visual Studio Code Remote - Containers](https://aka.ms/vscode-remote/containers)**.
 
 This is a sample project that lets you try out either option in a few easy steps. We have a variety of other [vscode-remote-try-*](https://github.com/search?q=org%3Amicrosoft+vscode-remote-try-&type=Repositories) sample projects, too.
