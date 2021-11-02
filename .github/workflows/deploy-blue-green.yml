@@ -48,7 +48,7 @@ jobs:
 
     - name: Push image
       run: |
-        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$IMAGE_NAME
+        BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME
         # Change all uppercase to lowercase
         BACKEND_IMAGE_ID=$(echo $BACKEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
         # Strip git ref prefix from version
@@ -62,19 +62,19 @@ jobs:
         docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:$VERSION
         docker push $BACKEND_IMAGE_ID:$VERSION
 
-        FRONDEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$IMAGE_NAME
+        FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME
         # Change all uppercase to lowercase
-        FRONDEND_IMAGE_ID=$(echo $FRONDEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
+        FRONTEND_IMAGE_ID=$(echo $FRONTEND_IMAGE_ID | tr '[A-Z]' '[a-z]')
         # Strip git ref prefix from version
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
         # Strip "v" prefix from tag name
         [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
         # Use Docker `latest` tag convention
         [ "$VERSION" == "master" ] && VERSION=latest
-        echo FRONDEND_IMAGE_ID=$FRONDEND_IMAGE_ID
+        echo FRONTEND_IMAGE_ID=$FRONTEND_IMAGE_ID
         echo VERSION=$VERSION
-        docker tag $FRONTEND_APP_NAME $FRONDEND_IMAGE_ID:$VERSION
-        docker push $FRONDEND_IMAGE_ID:$VERSION
+        docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:$VERSION
+        docker push $FRONTEND_IMAGE_ID:$VERSION
 
     - name: Install CLI-beta
       run: |
