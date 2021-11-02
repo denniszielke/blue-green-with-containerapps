@@ -87,5 +87,10 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: 'Run scripts'
-      run: cd $GITHUB_WORKSPACE/scripts && chmod +x ./deploy.sh && ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} ghcr.io/${{ github.repository_owner }}/container-apps/
+      run: |
+        ls -l 
+        cd $GITHUB_WORKSPACE/scripts
+        ls -l 
+        chmod +x ./deploy.sh
+        ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps/"
       shell: bash
