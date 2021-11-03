@@ -84,5 +84,5 @@ jobs:
         cd $GITHUB_WORKSPACE/scripts
         ls -l 
         chmod +x ./deploy.sh
-        ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps/"
+        ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps"
       shell: bash
