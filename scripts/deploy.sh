@@ -35,7 +35,7 @@ echo "deploying $VERSION from $REGISTRY"
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
-    #az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
+    az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
 
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
 
@@ -47,7 +47,6 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      --cpu 0.5 --memory 1Gi \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
-     --location "$CONTAINERAPPS_LOCATION" \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
@@ -75,7 +74,6 @@ else
      --cpu 0.5 --memory 1Gi \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
-     --location "$CONTAINERAPPS_LOCATION" \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
@@ -134,7 +132,7 @@ fi
 
 WORKER_FRONTEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$FRONTEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
-    #az containerapp delete -g $RESOURCE_GROUP --name $FRONTEND_APP_ID -y
+    az containerapp delete -g $RESOURCE_GROUP --name $FRONTEND_APP_ID -y
 
     WORKER_FRONTEND_APP_VERSION="frontend $COLOR - $VERSION"
 
@@ -146,7 +144,6 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      --cpu 0.5 --memory 1Gi \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
-     --location "$CONTAINERAPPS_LOCATION" \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
@@ -174,7 +171,6 @@ else
      --cpu 0.5 --memory 1Gi \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
-     --location "$CONTAINERAPPS_LOCATION" \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
