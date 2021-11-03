@@ -75,9 +75,11 @@ else
     done
 
     IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
-        echo "existing app is using color $IS_GREEN"
-    if [ "$IS_GREEN" = *"green"* ]; then
+    echo "existing app is using color $IS_GREEN"
+    COLOR="green"
+    if  grep -q "green" <<< "$IS_GREEN" ; then
         COLOR="blue"
+        echo "using blue"
     fi
 
     WORKER_BACKEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
@@ -181,8 +183,9 @@ else
     COLOR="green"
     IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
     echo "existing app is using color $IS_GREEN"
-    if [ "$IS_GREEN" = *"green"* ]; then
+    if  grep -q "green" <<< "$IS_GREEN" ; then
         COLOR="blue"
+        echo "using blue"
     fi
 
     WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
