@@ -150,12 +150,13 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
      --target-port 8080 --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+    #  -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -198,7 +199,7 @@ else
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
-      -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
