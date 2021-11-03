@@ -8,7 +8,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 ```
 DEPLOYMENT_NAME="dzca11cgithub" 
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
-LOCATION="eastus"
+LOCATION="northeurope"
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 GHUSER="denniszielke"
 GHREPO="blue-green-with-containerapps"
@@ -16,8 +16,10 @@ AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 
 az group create -n $RESOURCE_GROUP -l $LOCATION -o none
 
+AZURE_CLIENTID=$(az ad sp show --id $DEPLOYMENT_NAME -o json | jq -r '.[0].appId')
+if [ "$AZURE_CLIENTID" == "" ]; then
 AZURE_CLIENTID=$(az ad sp create-for-rbac --name "$DEPLOYMENT_NAME" --role contributor --scopes "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP" -o json | jq -r '.appId')
-
+fi
 
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENTID/federatedIdentityCredentials" --body '{"name":"$DEPLOYMENT_NAME","issuer":"https://token.actions.githubusercontent.com/","subject":"$GHUSER/$GHREPO:branch:main","description":"Testing","audiences":["api://AzureADTokenExchange"]}'
 
