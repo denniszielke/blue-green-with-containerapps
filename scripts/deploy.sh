@@ -35,7 +35,7 @@ echo "deploying $VERSION from $REGISTRY"
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
-    az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
+    #az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
 
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
 
@@ -132,7 +132,7 @@ fi
 
 WORKER_FRONTEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$FRONTEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
-    az containerapp delete -g $RESOURCE_GROUP --name $FRONTEND_APP_ID -y
+    #az containerapp delete -g $RESOURCE_GROUP --name $FRONTEND_APP_ID -y
 
     WORKER_FRONTEND_APP_VERSION="frontend $COLOR - $VERSION"
 
