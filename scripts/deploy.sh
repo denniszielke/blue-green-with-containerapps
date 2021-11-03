@@ -45,6 +45,7 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
+     --location "$CONTAINERAPPS_LOCATION"  \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
@@ -72,6 +73,7 @@ else
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
+     --location "$CONTAINERAPPS_LOCATION"  \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
@@ -142,6 +144,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
+     --location "$CONTAINERAPPS_LOCATION"  \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
@@ -169,6 +172,7 @@ else
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
+     --location "$CONTAINERAPPS_LOCATION"  \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \

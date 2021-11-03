@@ -8,7 +8,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 ```
 DEPLOYMENT_NAME="dzca11cgithub" 
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
-LOCATION="northeurope"
+LOCATION="canadacentral"
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 GHUSER="denniszielke"
 GHREPO="blue-green-with-containerapps"
