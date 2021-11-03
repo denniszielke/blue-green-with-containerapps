@@ -21,6 +21,7 @@ CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp
 CONTAINERAPPS_LOCATION="Central US EUAP"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 
+az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
 CONTAINER_APP_ENV_ID=$(az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv)
 if [ "$CONTAINER_APP_ENV_ID" == "" ]; then
