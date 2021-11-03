@@ -19,7 +19,7 @@ REGISTRY="$3"
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
-CONTAINERAPPS_LOCATION=$(az group show -n $RESOURCE_GROUP --query location -o tsv)
+CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
 
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv

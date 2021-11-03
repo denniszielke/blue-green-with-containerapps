@@ -6,10 +6,8 @@ permissions:
   id-token: write
   contents: read
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  deploy_ota:
+  deploy_infra:
     runs-on: ubuntu-latest
     name: Deploy
     steps:
@@ -27,7 +25,6 @@ jobs:
         echo "installed cli beta"    
         echo "$CWD/oidc-venv/bin" >> $GITHUB_PATH
 
-    # Login to Azure 
     - name: Azure Login Xpirit
       uses: azure/login@v1.4.0
       with:
