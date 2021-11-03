@@ -62,7 +62,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: deploy
-    needs: [build]
+    # needs: [build]
     steps:
     - uses: actions/checkout@v2
     - name: Install CLI-beta
