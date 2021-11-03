@@ -24,7 +24,7 @@ RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
 CONTAINER_APP_ENV_ID=$(az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv)
-if [ "$CONTAINER_APP_ENV_ID" == "" ]; then
+if [[ "$CONTAINER_APP_ENV_ID" == "" ]]; then
     echo "container app env $CONTAINER_APP_ENV_ID does not exist - abort"
 else
     echo "container app env $CONTAINER_APP_ENV_ID already exists"
@@ -34,7 +34,7 @@ echo "deploying $VERSION from $REGISTRY"
 
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
-if [ "$WORKER_BACKEND_APP_ID" == "" ]; then
+if [[ "$WORKER_BACKEND_APP_ID" == "" ]]; then
     #az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
 
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
