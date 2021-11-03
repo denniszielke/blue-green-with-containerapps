@@ -9,7 +9,7 @@ az extension add --source https://workerappscliextension.blob.core.windows.net/a
 FRONTEND_APP_ID="js-calc-frontend"
 BACKEND_APP_ID="js-calc-backend"
 
-COLOR="green" # color highlighting
+COLOR="blue" # color highlighting
 LAGGY="true" # if true the backend will cause random delays
 BUGGY="false" # if true the backend will randomly generate 500 errors
 
@@ -75,6 +75,7 @@ else
     done
 
     IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
+        echo "existing app is using color $IS_GREEN"
     if [ "$IS_GREEN" = *"green"* ]; then
         COLOR="blue"
     fi
@@ -178,6 +179,7 @@ else
 
     COLOR="green"
     IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
+    echo "existing app is using color $IS_GREEN"
     if [ "$IS_GREEN" = *"green"* ]; then
         COLOR="blue"
     fi
