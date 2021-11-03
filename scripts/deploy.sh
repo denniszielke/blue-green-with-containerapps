@@ -146,7 +146,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
@@ -174,7 +174,7 @@ else
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
