@@ -43,14 +43,14 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
-     --cpu 0.5 --memory 250Mi --enable-dapr true \
+     --cpu 0.5 --memory 1Gi --enable-dapr true \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
      --location "$CONTAINERAPPS_LOCATION" \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION" \
-     --target-port 8080
+     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -71,7 +71,7 @@ else
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
-     --cpu 0.5 --memory 250Mi --enable-dapr false \
+     --cpu 0.5 --memory 1Gi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
      --location "$CONTAINERAPPS_LOCATION" \
@@ -142,7 +142,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
-     --cpu 0.5 --memory 250Mi --enable-dapr false \
+     --cpu 0.5 --memory 1Gi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
      --location "$CONTAINERAPPS_LOCATION" \
@@ -170,7 +170,7 @@ else
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
-     --cpu 0.5 --memory 250Mi --enable-dapr false \
+     --cpu 0.5 --memory 1Gi --enable-dapr false \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_FRONTEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY,ENDPOINT=$WORKER_BACKEND_FQDN" \
      --ingress external \
      --location "$CONTAINERAPPS_LOCATION" \
