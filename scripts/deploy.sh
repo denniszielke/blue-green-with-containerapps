@@ -2,6 +2,7 @@
 
 set -e
 
+az extension remove -n containerapp
 az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
 
 # calculator properties
@@ -39,7 +40,7 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
 
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
 
-    echo "creating worker app $BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION"
+    echo "creating worker app $BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION from $REGISTRY/$BACKEND_APP_ID:$VERSION "
 
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
@@ -51,7 +52,7 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID
+     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 3000 
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
