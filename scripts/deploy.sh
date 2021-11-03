@@ -31,7 +31,6 @@ fi
 
 echo "deploying $VERSION from $REGISTRY"
 
-exit
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" == "" ]; then
@@ -44,7 +43,7 @@ if [ "$WORKER_BACKEND_APP_ID" == "" ]; then
     az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
      -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
      -n $BACKEND_APP_ID \
-     --cpu 0.5 --memory 250Mi --enable-dapr false \
+     --cpu 0.5 --memory 250Mi --enable-dapr true \
      -v "LAGGY=$LAGGY,BUGGY=$BUGGY,PORT=8080,VERSION=$WORKER_BACKEND_APP_VERSION,INSTRUMENTATIONKEY=$AI_INSTRUMENTATION_KEY" \
      --ingress external \
      --location "$CONTAINERAPPS_LOCATION" \
