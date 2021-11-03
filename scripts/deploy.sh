@@ -18,17 +18,11 @@ DEPLOYMENT_NAME="$1" # here enter unique deployment name (ideally short and with
 VERSION="$2" # version tag showing up in app
 REGISTRY="$3"
 
-# DEPLOYMENT_NAME=dzca11cgithub
-# VERSION=1417082353
-# REGISTRY=ghcr.io/denniszielke/container-apps
-
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
-
-
 
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
@@ -155,7 +149,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "ENDPOINT=$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
@@ -202,7 +196,7 @@ else
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
-      -v "ENDPOINT=$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+      -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
