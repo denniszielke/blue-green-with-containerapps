@@ -2,7 +2,7 @@
 
 set -e
 
-az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl-y
+az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
 
 # calculator properties
 FRONTEND_APP_ID="js-calc-frontend"
