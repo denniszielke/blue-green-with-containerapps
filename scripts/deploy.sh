@@ -21,6 +21,7 @@ DEPLOYMENT_NAME="$1" # here enter unique deployment name (ideally short and with
 VERSION="$2" # version tag showing up in app
 REGISTRY="$3"
 
+SUBSCRIPTION_ID=$(az account show --query id -o tsv) 
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
 REDIS_NAME="rds-$DEPLOYMENT_NAME"
@@ -283,3 +284,22 @@ else
 fi
 
 echo "frontend running on $WORKER_FRONTEND_FQDN"
+
+ID=$(uuidgen)
+ANNOTATIONNAME="release $VERSION"
+EVENTTIME=$(date '+%Y-%m-%dT%H:%M:%S')  #$(printf '%(%Y-%m-%dT%H:%M:%S)T')
+CATEGORY="Deployment"
+
+RESOURCE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/microsoft.insights/components/appins-env-$DEPLOYMENT_NAME"
+
+JSON_STRING=$( jq -n -c \
+                  --arg id "$ID" \
+                  --arg an "$ANNOTATIONNAME" \
+                  --arg et "$EVENTTIME" \
+                  --arg cg "$CATEGORY" \
+                  '{Id: $id, AnnotationName: $an, EventTime: $et, Category: $cg}' ) 
+                  
+JSON_STRING=$(echo $JSON_STRING | tr '"' "'")
+echo $JSON_STRING
+
+az rest --method put --uri "$RESOURCE/Annotations?api-version=2015-05-01" --body "$JSON_STRING"
