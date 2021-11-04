@@ -3,7 +3,10 @@
 set -e
 
 # az extension remove -n containerapp
-az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
+EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
+if [ $EXTENSION = "" ]; then
+    az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
+fi
 
 # calculator properties
 FRONTEND_APP_ID="js-calc-frontend"
@@ -61,15 +64,13 @@ EOF
 fi
 
 cat <<EOF > httpscaler.json
-{
+[{
     "name": "httpscalingrule",
-    "custom": {
-        "type": "http",
-        "metadata": {
-            "concurrentRequests": "10"
-        }
+     "type": "http",
+    "metadata": {
+        "concurrentRequests": "10"
     }
-}
+}]
 EOF
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
@@ -90,8 +91,7 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json \ 
-     --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port  8080 $REDIS_COMMAND
+     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
 
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -140,8 +140,7 @@ else
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json \ 
-     --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
+     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
      #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -197,8 +196,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json \ 
-     --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
     #  -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -248,8 +246,7 @@ else
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json \ 
-     --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
      #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -264,7 +261,6 @@ else
 
     curl $WORKER_FRONTEND_REVISION_FQDN/ping
    
-       
     echo "increasing traffic split to 50/50"
     az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
 
