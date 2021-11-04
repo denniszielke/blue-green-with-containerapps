@@ -48,14 +48,18 @@ REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostNa
 REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" )
 
 cat <<EOF | >> redis.yaml
-- name: statestore
-type: state.redis
-version: v1
+apiVersion: dapr.io/v1alpha1
+kind: Component
 metadata:
-- name: redisHost 
-    value: $REDIS_HOST:6379
-- name: redisPassword
-    value: $REDIS_KEY
+  name: statestore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost 
+      value: $REDIS_HOST:6379
+    - name: redisPassword
+      value: $REDIS_KEY
 EOF
 
 fi
