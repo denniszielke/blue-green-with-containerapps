@@ -24,7 +24,7 @@ REGISTRY="$3"
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) 
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
-REDIS_NAME="rds-$DEPLOYMENT_NAME"
+REDIS_NAME="rds-env-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
@@ -156,6 +156,7 @@ else
 
     curl $WORKER_BACKEND_REVISION_FQDN/ping
    
+    echo "here we can make a decision to abort and deactivate the new release"
        
     echo "increasing traffic split to 50/50"
     az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=50,latest=50
@@ -261,7 +262,9 @@ else
     echo "revision fqdn is $WORKER_FRONTEND_REVISION_FQDN"
 
     curl $WORKER_FRONTEND_REVISION_FQDN/ping
-   
+
+    echo "here we can make a decision to abort and deactivate the new release"
+
     echo "increasing traffic split to 50/50"
     az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
 
