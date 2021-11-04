@@ -60,6 +60,18 @@ EOF
 
 fi
 
+cat <<EOF > httpscaler.json
+{
+    "name": "httpscalingrule",
+    "custom": {
+        "type": "http",
+        "metadata": {
+            "concurrentRequests": "10"
+        }
+    }
+}
+EOF
+
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
     #az containerapp delete -g $RESOURCE_GROUP --name $BACKEND_APP_ID -y
@@ -78,7 +90,8 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
+     --target-port 8080 --scale-rules ./httpscaler.json \ 
+     --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port  8080 $REDIS_COMMAND
 
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -127,7 +140,8 @@ else
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
+     --target-port 8080 --scale-rules ./httpscaler.json \ 
+     --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
      #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -183,7 +197,8 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --scale-rules ./httpscaler.json \ 
+     --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
     #  -v "ENDPOINT=https://$WORKER_BACKEND_FQDN,VERSION=$WORKER_FRONTEND_APP_VERSION" \
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -233,7 +248,8 @@ else
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --scale-rules ./httpscaler.json \ 
+     --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
      #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
