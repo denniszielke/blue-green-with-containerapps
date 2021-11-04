@@ -13,7 +13,7 @@ This scenarios will make use of the following new features:
 - GitHub Actions with Federated Service Identity support for Azure
 
 
-![](/img/bg.png)
+![](/img/ghbgdepl.png)
 
 
 ## The calculator application
@@ -24,7 +24,7 @@ A couple of details on the application that is part of this scenario:
 - The number of replicas of both frontend and backend Container App instances is beeing determined by the number of requests per second.
 - All traces will be agregated using the dapr side cars in Application Insights
 
-![](/img/caapps.png)
+![](/img/caappsbg.png)
 
 ## Deployment of the Azure resources and GitHub configuration
 
