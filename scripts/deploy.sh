@@ -20,6 +20,7 @@ REGISTRY="$3"
 
 AZURE_CORE_ONLY_SHOW_ERRORS="True"
 CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp Environment
+REDIS_NAME="rds-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
@@ -34,6 +35,30 @@ else
 fi
 
 echo "deploying $VERSION from $REGISTRY"
+
+echo "creating redis components"
+
+REDIS_COMMAND=" --dapr-components ./redis.yaml"
+REDIS_ID=$(az redis list -g $RESOURCE_GROUP --query "[?contains(name, '$REDIS_NAME')].id" -o tsv)
+if [ "$REDIS_ID" = "" ]; then
+    REDIS_COMMAND=""
+else
+
+REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
+REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" )
+
+cat <<EOF | >> redis.yaml
+- name: statestore
+type: state.redis
+version: v1
+metadata:
+- name: redisHost 
+    value: $REDIS_HOST:6379
+- name: redisPassword
+    value: $REDIS_KEY
+EOF
+
+fi
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
@@ -53,7 +78,8 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
+
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -101,7 +127,7 @@ else
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
      --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 
+     --target-port 8080 --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
      #--scale-rules "wa/httpscaler.json" --debug --verbose
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -152,7 +178,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3501/v1.0/state/statestore" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
@@ -202,7 +228,7 @@ else
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3501/v1.0/state/statestore" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
