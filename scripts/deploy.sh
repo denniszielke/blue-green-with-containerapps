@@ -3,7 +3,7 @@
 set -e
 
 # az extension remove -n containerapp
-az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
+#az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.0-py2.py3-none-any.whl -y
 
 # calculator properties
 FRONTEND_APP_ID="js-calc-frontend"
@@ -45,21 +45,17 @@ if [ "$REDIS_ID" = "" ]; then
 else
 
 REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
-REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" )
+REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" -o tsv )
 
-cat <<EOF | >> redis.yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: statestore
-spec:
+cat <<EOF > redis.yaml
+- name: statestore
   type: state.redis
   version: v1
   metadata:
-    - name: redisHost 
-      value: $REDIS_HOST:6379
-    - name: redisPassword
-      value: $REDIS_KEY
+  - name: redisHost 
+    value: $REDIS_HOST:6379
+  - name: redisPassword
+    value: $REDIS_KEY
 EOF
 
 fi
@@ -182,7 +178,7 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
      --location "$CONTAINERAPPS_LOCATION"  \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3501/v1.0/state/statestore" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3500/v1.0/state/statestore" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
@@ -232,7 +228,7 @@ else
      -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
      -n $FRONTEND_APP_ID \
      --cpu 0.5 --memory 1Gi \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3501/v1.0/state/statestore" \
+     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3500/v1.0/state/statestore" \
      --ingress external \
      --max-replicas 10 --min-replicas 1 \
      --revisions-mode multiple \
