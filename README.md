@@ -1,17 +1,47 @@
-# Try Out Development Containers: Node.js
+# Blue green deployments on Azure Container Apps using GitHub Actions
+
+This reposistory hosts the calculator sample application to demonstrate continuous blue/green application deployments using GitHub Action on Azure Container Apps.
+
+In order to set up this demo you need to follow the instructions below.
+
+This scenarios will make use of the following new features:
+- Azure Container Apps as runtime for our containers
+- Builtin Dapr for solving service-to-service invocation inside the cluster
+- Builtin Keda for automatically scaling containers based on traffic
+- Builtin Envoy for implementing traffic splits between releases
+- Builtin Distributed Tracing in Application Insights
+- GitHub Actions with Federated Service Identity support for Azure
 
 
-## Set up GitHub Actions
+![](/img/bg.png)
 
+
+## The calculator application
+A couple of details on the application that is part of this scenario:
+- The calculator application is multi service app written in Node that calculates prime factors for random numbers.
+- The frontend application is making use of the dapr state store component to cache already calcualted results in an Azure Redis Cache instance.
+- The backend application is beeing called by the frontend application via dapr service invocation to calculate the prime factors and return the results.
+- The number of replicas of both frontend and backend Container App instances is beeing determined by the number of requests per second.
+- All traces will be agregated using the dapr side cars in Application Insights
+
+![](/img/caapps.png)
+
+## Deployment of the Azure resources and GitHub configuration
+
+### Set up workload Identity for your GitHub Actions to use federated trust
+
+Official documentation:
 https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation-create-trust-github?tabs=azure-portal
 
+We will create a service principal and grant it permissions on a dedicated resource group
+
 ```
-DEPLOYMENT_NAME="dzca11cgithub" 
+DEPLOYMENT_NAME="dzca11cgithub" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
-LOCATION="canadacentral"
+LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
-GHUSER="denniszielke"
-GHREPO="blue-green-with-containerapps"
+GHUSER="denniszielke" # replace with your user name
+GHREPO="blue-green-with-containerapps" # here the repo name
 AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 
 az group create -n $RESOURCE_GROUP -l $LOCATION -o none
@@ -24,74 +54,34 @@ fi
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENTID/federatedIdentityCredentials" --body '{"name":"$DEPLOYMENT_NAME","issuer":"https://token.actions.githubusercontent.com/","subject":"$GHUSER/$GHREPO:branch:main","description":"Testing","audiences":["api://AzureADTokenExchange"]}'
 
 ```
+If the last step did not work, you need to grant your service principal the ability to issue a azure ad authentication token to your GitHub Action pipelines that are part of the main branch by going into Azure Active Directory -> App registrations -> YourApp -> Certificates & secrets -> Federated credentials.
 
-A **development container** is a running [Docker](https://www.docker.com) container with a well-defined tool/runtime stack and its prerequisites. You can try out development containers with **[GitHub Codespaces](https://github.com/features/codespaces)** or **[Visual Studio Code Remote - Containers](https://aka.ms/vscode-remote/containers)**.
+![](/img/aadtrustserviceidentity.png)
 
-This is a sample project that lets you try out either option in a few easy steps. We have a variety of other [vscode-remote-try-*](https://github.com/search?q=org%3Amicrosoft+vscode-remote-try-&type=Repositories) sample projects, too.
+Next you need to add the following secrets to your github repository:
+- AZURE_CLIENT_ID
+- AZURE_SUBSCRIPTION_ID
+- AZURE_TENANT_ID
+- RESOURCE_GROUP
 
-> **Note:** If you already have a Codespace or dev container, you can jump to the [Things to try](#things-to-try) section.
+![](/img/ghsecrets.png)
 
-## Setting up the development container
+The nice thing about this is that you do NOT need to configure a client secret.
 
-### GitHub Codespaces
-Follow these steps to open this sample in a Codespace:
-1. Click the Code drop-down menu and select the **Open with Codespaces** option.
-1. Select **+ New codespace** at the bottom on the pane.
+### Deployment of the azure resources
 
-For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
-  
-### VS Code Remote - Containers
-Follow these steps to open this sample in a container using the VS Code Remote - Containers extension:
+If the permission and the application registration are set up correctly you can trigger the deployment of the Azure resources by running the `deploy-infrastructure` workflow manually.
 
-1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
+![](/img/wfresources.png)
 
-2. To use this repository, you can either open the repository in an isolated Docker volume:
+### Triggering blue/green deployments
 
-    - Press <kbd>F1</kbd> and select the **Remote-Containers: Try a Sample...** command.
-    - Choose the "Node" sample, wait for the container to start, and try things out!
-        > **Note:** Under the hood, this will use the **Remote-Containers: Clone Repository in Container Volume...** command to clone the source code in a Docker volume instead of the local filesystem. [Volumes](https://docs.docker.com/storage/volumes/) are the preferred mechanism for persisting container data.
+Once the infrastructure is deployed you can trigger a first deployment by changing any part of the `apps` or `scripts` folder contents.
+By changing content again you can see the new version slowly beeing rolled out (after it has been validated) in the frontend container app user interface.
+![](/img/bgcalculator.png)
 
-    Or open a locally cloned copy of the code:
-
-   - Clone this repository to your local filesystem.
-   - Press <kbd>F1</kbd> and select the **Remote-Containers: Open Folder in Container...** command.
-   - Select the cloned copy of this folder, wait for the container to start, and try things out!
-
-## Things to try
-
-Once you have this sample opened, you'll be able to work with it like you would locally.
-
-> **Note:** This container runs as a non-root user with sudo access by default. Comment out `"remoteUser": "node"` in `.devcontainer/devcontainer.json` if you'd prefer to run as root.
-
-Some things to try:
-
-1. **Edit:**
-   - Open `server.js`
-   - Try adding some code and check out the language features. 
-   - Notice that `eslint` and the `vscode-eslint` extension are already installed in the container since the `.devcontainer/devcontainer.json` lists `"dbaeumer.vscode-eslint"` as an extension to install automatically when the container is created.
-2. **Terminal:** Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\`</kbd> and type `uname` and other Linux commands from the terminal window.
-3. **Build, Run, and Debug:**
-   - Open `server.js`
-   - Add a breakpoint (e.g. on line 20).
-   - Press <kbd>F5</kbd> to launch the app in the container.
-   - Once the breakpoint is hit, try hovering over variables, examining locals, and more.
-   - Continue (<kbd>F5</kbd>). You can connect to the server in the container by either: 
-      - Clicking on `Open in Browser` in the notification telling you: `Your service running on port 3000 is available`.
-      - Clicking the globe icon in the 'Ports' view. The 'Ports' view gives you an organized table of your forwarded ports, and you can access it with the command **Ports: Focus on Ports View**.
-   - Notice port 3000 in the 'Ports' view is labeled "Hello Remote World." In `devcontainer.json`, you can set `"portsAttributes"`, such as a label for your forwarded ports and the action to be taken when the port is autoforwarded. 
-      - If we didn't know the port was 3000, we could've used a regex instead of "3000" in the `"portsAttributes"`, such as ".+/server.js".
-
-   > **Note:** In Remote - Containers, you can access your app at `http://localhost:3000` in a local browser. But in a browser-based Codespace, you must click the link from the notification or the `Ports` view so that the service handles port forwarding in the browser and generates the correct URL.
-   
-4. **Rebuild or update your container**
-
-   You may want to make changes to your container, such as installing a different version of a software or forwarding a new port. You'll rebuild your container for your changes to take effect. 
-   
-   **Open browser automatically:** As an example change, let's update the `portsAttributes` in the `.devcontainer/devcontainer.json` file to open a browser when our port is automatically forwarded.
-   
-   - Open the `.devcontainer/devcontainer.json` file.
-   - Modify the `"onAutoForward"` attribute in your `portsAttributes` from `"notify"` to `"openBrowser"`.
-   - Press <kbd>F1</kbd> and select the **Remote-Containers: Rebuild Container** or **Codespaces: Rebuild Container** command so the modifications are picked up.
+You can also see what is happening in Application Insights
+![](/img/tracing.png)
 
 ## Contributing
 
