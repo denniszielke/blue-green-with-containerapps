@@ -80,6 +80,8 @@ Once the infrastructure is deployed you can trigger a first deployment by changi
 By changing content again you can see the new version slowly beeing rolled out (after it has been validated) in the frontend container app user interface.
 ![](/img/bgcalculator.png)
 
+The logic for the blue green deployment is implemented in the [deploy](https://github.com/denniszielke/blue-green-with-containerapps/blob/main/scripts/deploy.sh) script.
+
 You can also see what is happening in Application Insights
 ![](/img/tracing.png)
 
