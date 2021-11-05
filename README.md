@@ -36,7 +36,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 We will create a service principal and grant it permissions on a dedicated resource group
 
 ```
-DEPLOYMENT_NAME="dzca11cgithub" # here the deployment
+DEPLOYMENT_NAME="dzca12cgithub" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
@@ -46,12 +46,9 @@ AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 
 az group create -n $RESOURCE_GROUP -l $LOCATION -o none
 
-AZURE_CLIENTID=$(az ad sp show --id $DEPLOYMENT_NAME -o json | jq -r '.[0].appId')
-if [ "$AZURE_CLIENTID" == "" ]; then
-AZURE_CLIENTID=$(az ad sp create-for-rbac --name "$DEPLOYMENT_NAME" --role contributor --scopes "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP" -o json | jq -r '.appId')
-fi
+AZURE_CLIENT_ID=$(az ad sp create-for-rbac --name "$DEPLOYMENT_NAME" --role contributor --scopes "/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP" -o json | jq -r '.appId')
 
-az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENTID/federatedIdentityCredentials" --body '{"name":"$DEPLOYMENT_NAME","issuer":"https://token.actions.githubusercontent.com/","subject":"$GHUSER/$GHREPO:branch:main","description":"Testing","audiences":["api://AzureADTokenExchange"]}'
+az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENT_ID/federatedIdentityCredentials" --body "{'name':'$DEPLOYMENT_NAME','issuer':'https://token.actions.githubusercontent.com/','subject':'repo:$GHUSER/$GHREPO:ref:refs/heads:main','description':'GitHub Actions for $DEPLOYMENT_NAME','audiences':['api://AzureADTokenExchange']}"
 
 ```
 If the last step did not work, you need to grant your service principal the ability to issue a azure ad authentication token to your GitHub Action pipelines that are part of the main branch by going into Azure Active Directory -> App registrations -> YourApp -> Certificates & secrets -> Federated credentials.
@@ -87,19 +84,5 @@ You can also see what is happening in Application Insights
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+This project welcomes contributions and suggestions.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## License
-
-Copyright © Microsoft Corporation All rights reserved.<br />
-Licensed under the MIT License. See LICENSE in the project root for license information.
