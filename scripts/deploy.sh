@@ -157,10 +157,12 @@ else
     
     echo "here we can make a decision to abort and deactivate the new release"
 
-    RES_BACKEND=$(curl -f -s $WORKER_BACKEND_REVISION_FQDN/ping)
+    RES_BACKEND=$(curl --write-out "%{http_code}\n" -f -s $WORKER_BACKEND_REVISION_FQDN/ping --output backend.txt )
+    echo $RES_BACKEND
 
-    if  grep -q "pong" <<< "$RES_BACKEND" ; then
+    if  RES_BACKEND == "200" ; then
        
+        echo "backend is up and running and responded with $RES_BACKEND"
         # echo "increasing traffic split to 50/50"
         # az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=50,latest=50
 
@@ -182,6 +184,11 @@ else
 
     else
         echo "backend responded with $RES_BACKEND - deployment failed"
+        
+        echo "bringing back the old revision $OLD_BACKEND_RELEASE_NAME"
+        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100,latest=0
+        
+        sleep 5
 
         echo "deleting latest backend revision $NEW_BACKEND_RELEASE_NAME"
         az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $NEW_BACKEND_RELEASE_NAME 
@@ -274,11 +281,13 @@ else
     echo "here we can make a decision to abort and deactivate the new release"
 
     sleep 10
-    
-    RES_FRONTEND=$(curl -f -s $WORKER_FRONTEND_REVISION_FQDN/ping)
 
-    if  grep -q "pong" <<< "$RES_FRONTEND" ; then
+    RES_FRONTEND=$(curl --write-out "%{http_code}\n" -f -s $WORKER_FRONTEND_REVISION_FQDN/ping --output frontend.txt )
+    echo $RES_FRONTEND
 
+    if  RES_FRONTEND == "200" ; then
+
+        echo "frontend is up and running and responded with $RES_FRONTEND"
         # echo "increasing traffic split to 50/50"
         # az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
 
@@ -299,11 +308,20 @@ else
 
         echo "activating previous backend revison $OLD_BACKEND_RELEASE_NAME again"
         az containerapp revision activate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $OLD_BACKEND_RELEASE_NAME 
+        
+        sleep 5
+
+        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100,latest=0
 
         sleep 5
 
         echo "deleting latest backend revision $NEW_BACKEND_RELEASE_NAME"
         az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $NEW_BACKEND_RELEASE_NAME 
+
+        echo "bringing back the original frontend release $OLD_FRONTEND_RELEASE_NAME"
+        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=100,latest=0
+
+        sleep 5
 
         echo "deleting latest frontend revision $NEW_FRONTEND_RELEASE_NAME again"
         az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $NEW_FRONTEND_RELEASE_NAME 
