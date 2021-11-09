@@ -43,12 +43,14 @@ AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your sub
 GHUSER="denniszielke" # replace with your user name
 GHREPO="blue-green-with-containerapps" # here the repo name
 AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
-
+GHREPO_BRANCH=":ref:refs/heads:main"
 az group create -n $RESOURCE_GROUP -l $LOCATION -o none
 
 AZURE_CLIENT_ID=$(az ad sp create-for-rbac --name "$DEPLOYMENT_NAME" --role contributor --scopes "/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP" -o json | jq -r '.appId')
 
-az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENT_ID/federatedIdentityCredentials" --body "{'name':'$DEPLOYMENT_NAME','issuer':'https://token.actions.githubusercontent.com/','subject':'repo:$GHUSER/$GHREPO:ref:refs/heads:main','description':'GitHub Actions for $DEPLOYMENT_NAME','audiences':['api://AzureADTokenExchange']}"
+AZURE_CLIENT_OBJECT_ID="$(az ad app show --id ${AZURE_CLIENT_ID} --query objectId -otsv)"
+
+az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$AZURE_CLIENT_OBJECT_ID/federatedIdentityCredentials" --body "{'name':'$DEPLOYMENT_NAME','issuer':'https://token.actions.githubusercontent.com/','subject':'repo:$GHUSER/$GHREPO$GHREPO_BRANCH','description':'GitHub Actions for $DEPLOYMENT_NAME','audiences':['api://AzureADTokenExchange']}"
 
 ```
 If the last step did not work, you need to grant your service principal the ability to issue a azure ad authentication token to your GitHub Action pipelines that are part of the main branch by going into Azure Active Directory -> App registrations -> YourApp -> Certificates & secrets -> Federated credentials.
