@@ -158,9 +158,9 @@ else
     echo "here we can make a decision to abort and deactivate the new release"
 
     RES_BACKEND=$(curl --write-out "%{http_code}\n" -f -s $WORKER_BACKEND_REVISION_FQDN/ping --output backend.txt )
-    echo $RES_BACKEND
+    echo $RES_BACKEND 
 
-    if  $RES_BACKEND = "301" ; then
+    if [ $RES_BACKEND = "301" ]; then
        
         echo "backend is up and running and responded with $RES_BACKEND"
         # echo "increasing traffic split to 50/50"
@@ -285,7 +285,7 @@ else
     RES_FRONTEND=$(curl --write-out "%{http_code}\n" -f -s $WORKER_FRONTEND_REVISION_FQDN/ping --output frontend.txt )
     echo $RES_FRONTEND
 
-    if $RES_FRONTEND = "301" ; then
+    if [ $RES_FRONTEND = "301" ]; then
 
         echo "frontend is up and running and responded with $RES_FRONTEND"
         # echo "increasing traffic split to 50/50"
