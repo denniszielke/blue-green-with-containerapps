@@ -161,14 +161,14 @@ else
 
     if  grep -q "pong" <<< "$RES_BACKEND" ; then
        
-        echo "increasing traffic split to 50/50"
-        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=50,latest=50
+        # echo "increasing traffic split to 50/50"
+        # az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=50,latest=50
 
-        sleep 10
+        # sleep 10
         
-        curl $WORKER_BACKEND_REVISION_FQDN/ping
+        # curl $WORKER_BACKEND_REVISION_FQDN/ping
 
-        sleep 10
+        # sleep 10
         
         echo "increasing traffic split to 0/100"
         az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0,latest=100
@@ -279,14 +279,14 @@ else
 
     if  grep -q "pong" <<< "$RES_FRONTEND" ; then
 
-        echo "increasing traffic split to 50/50"
-        az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
+        # echo "increasing traffic split to 50/50"
+        # az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
 
-        sleep 10
+        # sleep 10
         
-        echo "increasing traffic split to 0/100"
-        az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
-        sleep 5
+        # echo "increasing traffic split to 0/100"
+        # az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
+        # sleep 5
 
         az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $OLD_FRONTEND_RELEASE_NAME 
 
