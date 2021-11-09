@@ -293,9 +293,9 @@ else
 
         # sleep 10
         
-        # echo "increasing traffic split to 0/100"
-        # az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
-        # sleep 5
+        echo "increasing traffic split to 0/100"
+        az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
+        sleep 5
 
         az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $OLD_FRONTEND_RELEASE_NAME 
 
