@@ -36,7 +36,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 We will create a service principal and grant it permissions on a dedicated resource group
 
 ```
-DEPLOYMENT_NAME="dzca12cgithub" # here the deployment
+DEPLOYMENT_NAME="dzca13cgithub" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
