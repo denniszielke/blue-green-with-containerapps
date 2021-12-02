@@ -1,10 +1,6 @@
 $(document).ready(function(){
   $("#post-url").click(function(){
     var text=$("#url").val();
-    if (!text.startsWith("http://"))
-    {
-        text = "http://" + text;
-    }
     $.post("/", { url: text, action: "POST" }, function(data, status){
        $("#result").append("<p><b>POST" + "</b> "+  text  + " <i>" +JSON.stringify(data) + "</i>, " + status + "</p>");
     });
@@ -12,10 +8,6 @@ $(document).ready(function(){
 
   $("#get-url").click(function(){
     var text=$("#url").val();
-    if (!text.startsWith("http://"))
-    {
-        text = "http://" + text;
-    }
     $.post("/", { url: text, action: "GET" }, function(data, status){
        $("#result").append("<p><b>GET" + "</b> " + text +  " <i>" +JSON.stringify(data) + "</i>, " + status + "</p>");
     });
