@@ -58,6 +58,7 @@ cat <<EOF > httpscaler.json
     }
 }]
 EOF
+EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
 if [ "$EXPLORER_APP_ID" = "" ]; then
@@ -86,11 +87,10 @@ if [ "$EXPLORER_APP_ID" = "" ]; then
 else
     echo "explorer app does already exist - updating"
 
-    az containerapp update -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
+    az containerapp update -g $RESOURCE_GROUP \
     -i $REGISTRY/$EXPLORER_APP_NAME:$VERSION \
     -n $EXPLORER_APP_NAME \
     --cpu 0.5 --memory 1Gi \
-    --location "$CONTAINERAPPS_LOCATION"  \
     -v "VERSION=$EXPLORER_APP_VERSION" \
     --ingress external \
     --max-replicas 3 --min-replicas 1 \
