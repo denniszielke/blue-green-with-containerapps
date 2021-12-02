@@ -62,17 +62,31 @@ EOF
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
 if [ "$EXPLORER_APP_ID" = "" ]; then
     echo "explorer app does not exist"
+
+    echo "creating worker app $EXPLORER_APP_ID of $EXPLORER_APP_VERSION from $REGISTRY/$EXPLORER_APP_NAME:$VERSION "
+
+    az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
+        -i $REGISTRY/$EXPLORER_APP_NAME:$VERSION \
+        -n $EXPLORER_APP_NAME \
+        --cpu 0.5 --memory 1Gi \
+        --location "$CONTAINERAPPS_LOCATION"  \
+        -v "VERSION=$EXPLORER_APP_VERSION" \
+        --ingress external \
+        --max-replicas 3 --min-replicas 1 \
+        --revisions-mode single \
+        --tags "app=backend,version=$EXPLORER_APP_VERSION" \
+        --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000
+
+
+    az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+
+    az containerapp revision list -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+
+
 else
-    echo "explorer app does already exist - deleting"
-    az containerapp delete -g $RESOURCE_GROUP --name $EXPLORER_APP_NAME -y
-fi
+    echo "explorer app does already exist - updating"
 
-
-EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
-
-echo "creating worker app $EXPLORER_APP_ID of $EXPLORER_APP_VERSION from $REGISTRY/$EXPLORER_APP_NAME:$VERSION "
-
-az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
+    az containerapp update -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
     -i $REGISTRY/$EXPLORER_APP_NAME:$VERSION \
     -n $EXPLORER_APP_NAME \
     --cpu 0.5 --memory 1Gi \
@@ -85,9 +99,15 @@ az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
     --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000
 
 
-az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+    az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
-az containerapp revision list -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    az containerapp revision list -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+
+fi
+
+
+EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
+
 
 EXPLORER_APP_ID=$(az containerapp show -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME -o tsv --query id)
 EXPLORER_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "configuration.ingress.fqdn" -o tsv)
