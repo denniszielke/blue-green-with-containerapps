@@ -1,0 +1,66 @@
+name: deploy-dapr-explorer
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+    paths:
+      - apps/js-dapr-explorer/**
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps
+
+env:
+  APP_NAME: js-dapr-explorer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: build
+    permissions:
+      packages: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build image
+      run: |
+        cd $APP_NAME
+        docker build . --file Dockerfile --tag $APP_NAME --label "runnumber=${GITHUB_RUN_ID}"
+
+    - name: Log in to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Push image
+      run: |
+        APP_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$APP_NAME
+        docker tag $APP_NAME $APP_IMAGE_ID:${GITHUB_RUN_ID}
+        docker push $APP_IMAGE_ID:${GITHUB_RUN_ID}
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: deploy
+    needs: [build]
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 'Run scripts'
+      run: |
+        ls -l 
+        cd $GITHUB_WORKSPACE/scripts
+        ls -l 
+        chmod +x ./deploy-explorer.sh
+        ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps"
+      shell: bash
