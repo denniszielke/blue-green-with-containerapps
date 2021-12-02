@@ -22,7 +22,9 @@ app.get('/', function(req, res) {
 });
 app.get('/ping', function(req, res) {
     console.log('received ping');
-    var pong = { response: "pong!", host: OS.hostname(), version: config.version };
+    var sourceIp = req.connection.remoteAddress;
+    var forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
+    var pong = { response: "pong!", host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, version: config.version };
     console.log(pong);
     res.send(pong);
 });
