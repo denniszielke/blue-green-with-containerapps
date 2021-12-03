@@ -72,7 +72,7 @@ if [ "$EXPLORER_APP_ID" = "" ]; then
         --location "$CONTAINERAPPS_LOCATION"  \
         -v "VERSION=$EXPLORER_APP_VERSION" \
         --ingress external \
-        --max-replicas 3 --min-replicas 1 \
+        --max-replicas 3 --min-replicas 0 \
         --revisions-mode single \
         --tags "app=backend,version=$EXPLORER_APP_VERSION" \
         --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
@@ -91,7 +91,7 @@ else
     --cpu 0.5 --memory 1Gi \
     -v "VERSION=$EXPLORER_APP_VERSION" \
     --ingress external \
-    --max-replicas 3 --min-replicas 1 \
+    --max-replicas 3 --min-replicas 0 \
     --revisions-mode single \
     --tags "app=backend,version=$EXPLORER_APP_VERSION" \
     --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
