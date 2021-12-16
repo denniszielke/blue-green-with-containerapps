@@ -63,4 +63,6 @@ jobs:
         ls -l 
         chmod +x ./deploy-explorer.sh
         ./deploy-explorer.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps"
+        chmod +x ./deploy-dapr-explorer.sh
+        ./deploy-dapr-explorer.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps"
       shell: bash

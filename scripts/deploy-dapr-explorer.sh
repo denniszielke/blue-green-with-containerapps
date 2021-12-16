@@ -9,7 +9,7 @@ set -e
 # fi
 
 # calculator properties
-EXPLORER_APP_NAME="js-explorer"
+EXPLORER_APP_NAME="js-dapr-explorer"
 CONTAINER_NAME="js-dapr-explorer"
 
 # infrastructure deployment properties
@@ -35,6 +35,17 @@ else
 fi
 
 echo "deploying $VERSION from $REGISTRY"
+
+echo "creating middleware components"
+DAPR_COMPONENTS="" # --dapr-components ./middleware.yaml"
+cat <<EOF > middleware.yaml
+- name: ratelimit
+  type: middleware.http.ratelimit
+  version: v1
+  metadata:
+  - name: maxRequestsPerSecond
+    value: 2
+EOF
 
 
 cat <<EOF > httpscaler.json
@@ -64,7 +75,7 @@ if [ "$EXPLORER_APP_ID" = "" ]; then
         --max-replicas 3 --min-replicas 0 \
         --revisions-mode single \
         --tags "app=backend,version=$EXPLORER_APP_VERSION" \
-        --target-port 3000 --scale-rules ./httpscaler.json
+        --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
 
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
@@ -83,7 +94,7 @@ else
     --max-replicas 3 --min-replicas 0 \
     --revisions-mode single \
     --tags "app=backend,version=$EXPLORER_APP_VERSION" \
-    --target-port 3000 --scale-rules ./httpscaler.json
+    --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
 
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
