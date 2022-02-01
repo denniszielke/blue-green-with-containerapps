@@ -24,6 +24,7 @@ REDIS_NAME="rds-env-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
+LOCATION=$(az group show -n $RESOURCE_GROUP --query location -o tsv)
 
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
@@ -47,36 +48,66 @@ cat <<EOF > middleware.yaml
     value: 2
 EOF
 
-
-cat <<EOF > httpscaler.json
-[{
-    "name": "httpscalingrule",
-     "type": "http",
-    "metadata": {
-        "concurrentRequests": "10"
-    }
-}]
-EOF
 EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
+
+
+cat <<EOF > containerapp.yaml
+kind: containerapp
+location: $LOCATION
+name: $EXPLORER_APP_NAME
+resourceGroup: $RESOURCE_GROUP
+type: Microsoft.Web/containerApps
+tags:
+    app: explorer
+    version: $VERSION
+properties:
+    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    configuration:
+        activeRevisionsMode: single
+        ingress:
+            external: True
+            allowInsecure: false
+            targetPort: 3000
+            traffic:
+            - latestRevision: true
+              weight: 100
+            transport: Auto
+    template:
+        revisionSuffix: $VERSION
+        containers:
+        - image: $REGISTRY/$CONTAINER_NAME:$VERSION
+          name: $EXPLORER_APP_NAME
+          env:
+          - name: HTTP_PORT
+            value: 3000
+          - name: VERSION
+            value: $VERSION
+          resources:
+              cpu: 0.5
+              memory: 1Gi
+        scale:
+          minReplicas: 0
+          maxReplicas: 4
+          rules:
+          - name: httprule
+            custom:
+              type: http
+              metadata:
+                concurrentRequests: 10
+        dapr:
+          enabled: true
+          appPort: 3000
+          appId: $EXPLORER_APP_NAME
+EOF
+
 if [ "$EXPLORER_APP_ID" = "" ]; then
     echo "explorer app does not exist"
 
     echo "creating worker app $EXPLORER_APP_ID of $EXPLORER_APP_VERSION from $REGISTRY/$CONTAINER_NAME:$VERSION "
 
-    az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-        -i $REGISTRY/$CONTAINER_NAME:$VERSION \
-        -n $EXPLORER_APP_NAME \
-        --cpu 0.5 --memory 1Gi \
-        --location "$CONTAINERAPPS_LOCATION"  \
-        -v "VERSION=$EXPLORER_APP_VERSION" \
-        --ingress external \
-        --max-replicas 3 --min-replicas 0 \
-        --revisions-mode single \
-        --tags "app=backend,version=$EXPLORER_APP_VERSION" \
-        --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
-
+    az containerapp create  -n $EXPLORER_APP_NAME -g $RESOURCE_GROUP --yaml containerapp.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -85,17 +116,7 @@ if [ "$EXPLORER_APP_ID" = "" ]; then
 else
     echo "explorer app does already exist - updating worker app $EXPLORER_APP_ID of $EXPLORER_APP_VERSION from $REGISTRY/$CONTAINER_NAME:$VERSION "
 
-    az containerapp update -g $RESOURCE_GROUP \
-    -i $REGISTRY/$CONTAINER_NAME:$VERSION \
-    -n $EXPLORER_APP_NAME \
-    --cpu 0.5 --memory 1Gi \
-    -v "VERSION=$EXPLORER_APP_VERSION" \
-    --ingress external \
-    --max-replicas 3 --min-replicas 0 \
-    --revisions-mode single \
-    --tags "app=backend,version=$EXPLORER_APP_VERSION" \
-    --target-port 3000 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $EXPLORER_APP_NAME --dapr-app-port 3000 $DAPR_COMPONENTS
-
+    az containerapp update  -n $EXPLORER_APP_NAME -g $RESOURCE_GROUP --yaml containerapp.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -103,9 +124,7 @@ else
 
 fi
 
-
 EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
-
 
 EXPLORER_APP_ID=$(az containerapp show -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME -o tsv --query id)
 EXPLORER_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "configuration.ingress.fqdn" -o tsv)

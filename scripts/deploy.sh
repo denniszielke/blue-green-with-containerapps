@@ -28,7 +28,7 @@ REDIS_NAME="rds-env-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
 AI_INSTRUMENTATION_KEY=""
-
+LOCATION=$(az group show -n $RESOURCE_GROUP --query location -o tsv)
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
 CONTAINER_APP_ENV_ID=$(az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv)
@@ -40,39 +40,6 @@ fi
 
 echo "deploying $VERSION from $REGISTRY"
 
-echo "creating redis components"
-
-REDIS_COMMAND=" --dapr-components ./redis.yaml"
-REDIS_ID=$(az redis list -g $RESOURCE_GROUP --query "[?contains(name, '$REDIS_NAME')].id" -o tsv)
-if [ "$REDIS_ID" = "" ]; then
-    REDIS_COMMAND=""
-else
-
-REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
-REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" -o tsv )
-
-cat <<EOF > redis.yaml
-- name: redis
-  type: state.redis
-  version: v1
-  metadata:
-  - name: redisHost 
-    value: $REDIS_HOST:6379
-  - name: redisPassword
-    value: $REDIS_KEY
-EOF
-
-fi
-
-cat <<EOF > httpscaler.json
-[{
-    "name": "httpscalingrule",
-     "type": "http",
-    "metadata": {
-        "concurrentRequests": "10"
-    }
-}]
-EOF
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
@@ -82,18 +49,59 @@ if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
 
     echo "creating worker app $BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION from $REGISTRY/$BACKEND_APP_ID:$VERSION "
 
-    az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
-     -n $BACKEND_APP_ID \
-     --cpu 0.5 --memory 1Gi \
-     --location "$CONTAINERAPPS_LOCATION"  \
-     -v "VERSION=$WORKER_BACKEND_APP_VERSION" \
-     --ingress external \
-     --max-replicas 10 --min-replicas 1 \
-     --revisions-mode multiple \
-     --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
 
+cat <<EOF > backend.yaml
+kind: containerapp
+location: $LOCATION
+name: $BACKEND_APP_ID
+resourceGroup: $RESOURCE_GROUP
+type: Microsoft.Web/containerApps
+tags:
+    app: backend
+    version: $WORKER_BACKEND_APP_VERSION
+    color: $COLOR
+properties:
+    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    configuration:
+        activeRevisionsMode: multiple
+        ingress:
+            external: True
+            allowInsecure: false
+            targetPort: 8080
+            traffic:
+            - latestRevision: true
+              weight: 100
+            transport: Auto
+    template:
+        revisionSuffix: $VERSION
+        containers:
+        - image: $REGISTRY/$BACKEND_APP_ID:$VERSION
+          name: $BACKEND_APP_ID
+          env:
+          - name: VERSION
+            value: $WORKER_BACKEND_APP_VERSION
+          - name: PORT
+            value: 8080
+          resources:
+              cpu: 0.5
+              memory: 1Gi
+        scale:
+          minReplicas: 0
+          maxReplicas: 10
+          rules:
+          - name: httprule
+            custom:
+              type: http
+              metadata:
+                concurrentRequests: 10
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $BACKEND_APP_ID
+EOF
+
+
+    az containerapp create  -n $BACKEND_APP_ID -g $RESOURCE_GROUP --yaml backend.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -132,16 +140,59 @@ else
 
     echo "deploying new revision of $WORKER_BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION" 
 
-    az containerapp update -g $RESOURCE_GROUP \
-     -i $REGISTRY/$BACKEND_APP_ID:$VERSION \
-     -n $BACKEND_APP_ID \
-     --cpu 0.5 --memory 1Gi \
-      -v "VERSION=$WORKER_BACKEND_APP_VERSION" \
-     --ingress external \
-     --max-replicas 10 --min-replicas 1 \
-     --revisions-mode multiple \
-     --tags "app=backend,version=$WORKER_BACKEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $BACKEND_APP_ID --dapr-app-port 8080 $REDIS_COMMAND
+cat <<EOF > backend.yaml
+kind: containerapp
+location: $LOCATION
+name: $BACKEND_APP_ID
+resourceGroup: $RESOURCE_GROUP
+type: Microsoft.Web/containerApps
+tags:
+    app: backend
+    version: $WORKER_BACKEND_APP_VERSION
+    color: $COLOR
+properties:
+    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    configuration:
+        activeRevisionsMode: multiple
+        ingress:
+            external: True
+            allowInsecure: false
+            targetPort: 8080
+            traffic:
+            - latestRevision: true
+              weight: 0
+            - revisionName: $OLD_BACKEND_RELEASE_NAME
+              weight: 100
+            transport: Auto
+    template:
+        revisionSuffix: $VERSION
+        containers:
+        - image: $REGISTRY/$BACKEND_APP_ID:$VERSION
+          name: $BACKEND_APP_ID
+          env:
+          - name: VERSION
+            value: $WORKER_BACKEND_APP_VERSION
+          - name: PORT
+            value: 8080
+          resources:
+              cpu: 0.5
+              memory: 1Gi
+        scale:
+          minReplicas: 0
+          maxReplicas: 10
+          rules:
+          - name: httprule
+            custom:
+              type: http
+              metadata:
+                concurrentRequests: 10
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $BACKEND_APP_ID
+EOF
+
+    az containerapp update  -n $BACKEND_APP_ID -g $RESOURCE_GROUP --yaml backend.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -176,7 +227,11 @@ else
         az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0,latest=100
         sleep 5
 
+        echo "deactivating $OLD_BACKEND_RELEASE_NAME"
+
         az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $OLD_BACKEND_RELEASE_NAME 
+
+        sleep 5
 
         az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
 
@@ -199,6 +254,21 @@ else
 fi
 
 
+echo "checking redis components"
+
+REDIS_ID=$(az redis list -g $RESOURCE_GROUP --query "[?contains(name, '$REDIS_NAME')].id" -o tsv)
+if [ "$REDIS_ID" = "" ]; then
+    echo "no redis found"
+else
+
+    echo "found redis instance $REDIS_ID"
+
+REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
+REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" -o tsv )
+
+fi
+
+
 WORKER_FRONTEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$FRONTEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
     #az containerapp delete -g $RESOURCE_GROUP --name $FRONTEND_APP_ID -y
@@ -207,17 +277,70 @@ if [ "$WORKER_FRONTEND_APP_ID" = "" ]; then
 
     echo "creating worker app $FRONTEND_APP_ID of $WORKER_FRONTEND_APP_VERSION using $WORKER_BACKEND_FQDN"
 
-    az containerapp create -e $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP \
-     -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
-     -n $FRONTEND_APP_ID \
-     --cpu 0.5 --memory 1Gi \
-     --location "$CONTAINERAPPS_LOCATION"  \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3500/v1.0/state/redis" \
-     --ingress external \
-     --max-replicas 10 --min-replicas 1 \
-     --revisions-mode multiple \
-     --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+cat <<EOF > frontend.yaml
+kind: containerapp
+location: $LOCATION
+name: $FRONTEND_APP_ID
+resourceGroup: $RESOURCE_GROUP
+type: Microsoft.Web/containerApps
+tags:
+    app: frontend
+    version: $WORKER_FRONTEND_APP_VERSION
+    color: $COLOR
+properties:
+    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    configuration:
+        activeRevisionsMode: multiple
+        ingress:
+            external: True
+            allowInsecure: false
+            targetPort: 8080
+            traffic:
+            - latestRevision: true
+              weight: 100
+            transport: Auto
+    template:
+        revisionSuffix: $VERSION
+        containers:
+        - image: $REGISTRY/$FRONTEND_APP_ID:$VERSION
+          name: $FRONTEND_APP_ID
+          env:
+          - name: VERSION
+            value: $WORKER_FRONTEND_APP_VERSION
+          - name: PORT
+            value: 8080
+          - name: ENDPOINT
+            value: http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method
+          - name: CACHEENDPOINT
+            value: http://localhost:3500/v1.0/state/redis
+          resources:
+              cpu: 0.5
+              memory: 1Gi
+        scale:
+          minReplicas: 0
+          maxReplicas: 10
+          rules:
+          - name: httprule
+            custom:
+              type: http
+              metadata:
+                concurrentRequests: 10
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $FRONTEND_APP_ID
+          components:
+          - name: redis
+            type: state.redis
+            version: v1
+            metadata:
+            - name: redisHost 
+              value: $REDIS_HOST:6379
+            - name: redisPassword
+              value: $REDIS_KEY
+EOF
+
+    az containerapp create  -n $FRONTEND_APP_ID -g $RESOURCE_GROUP --yaml frontend.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -257,16 +380,72 @@ else
 
     echo "deploying new revision of $WORKER_FRONTEND_APP_ID of $WORKER_FRONTEND_APP_VERSION" 
 
-    az containerapp update -g $RESOURCE_GROUP \
-     -i $REGISTRY/$FRONTEND_APP_ID:$VERSION \
-     -n $FRONTEND_APP_ID \
-     --cpu 0.5 --memory 1Gi \
-     -v "ENDPOINT=http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method,VERSION=$WORKER_FRONTEND_APP_VERSION,CACHEENDPOINT=http://localhost:3500/v1.0/state/redis" \
-     --ingress external \
-     --max-replicas 10 --min-replicas 1 \
-     --revisions-mode multiple \
-     --tags "app=backend,version=$WORKER_FRONTEND_APP_VERSION,color=$COLOR" \
-     --target-port 8080 --scale-rules ./httpscaler.json --enable-dapr --dapr-app-id $FRONTEND_APP_ID --dapr-app-port 8080 
+cat <<EOF > frontend.yaml
+kind: containerapp
+location: $LOCATION
+name: $FRONTEND_APP_ID
+resourceGroup: $RESOURCE_GROUP
+type: Microsoft.Web/containerApps
+tags:
+    app: frontend
+    version: $WORKER_FRONTEND_APP_VERSION
+    color: $COLOR
+properties:
+    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    configuration:
+        activeRevisionsMode: multiple
+        ingress:
+            external: True
+            allowInsecure: false
+            targetPort: 8080
+            traffic:
+            - latestRevision: true
+              weight: 0
+            - revisionName: $OLD_FRONTEND_RELEASE_NAME
+              weight: 100
+            transport: Auto
+    template:
+        revisionSuffix: $VERSION
+        containers:
+        - image: $REGISTRY/$FRONTEND_APP_ID:$VERSION
+          name: $FRONTEND_APP_ID
+          env:
+          - name: VERSION
+            value: $WORKER_FRONTEND_APP_VERSION
+          - name: PORT
+            value: 8080
+          - name: ENDPOINT
+            value: http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method
+          - name: CACHEENDPOINT
+            value: http://localhost:3500/v1.0/state/redis
+          resources:
+              cpu: 0.5
+              memory: 1Gi
+        scale:
+          minReplicas: 0
+          maxReplicas: 10
+          rules:
+          - name: httprule
+            custom:
+              type: http
+              metadata:
+                concurrentRequests: 10
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $FRONTEND_APP_ID
+          components:
+          - name: redis
+            type: state.redis
+            version: v1
+            metadata:
+            - name: redisHost 
+              value: $REDIS_HOST:6379
+            - name: redisPassword
+              value: $REDIS_KEY
+EOF
+
+    az containerapp update  -n $FRONTEND_APP_ID -g $RESOURCE_GROUP --yaml frontend.yaml
 
     az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
 
@@ -297,7 +476,10 @@ else
         az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
         sleep 5
 
+        echo "deactivating $OLD_FRONTEND_RELEASE_NAME"
         az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $OLD_FRONTEND_RELEASE_NAME 
+
+        sleep 5
 
         az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
 

@@ -135,15 +135,6 @@ app.post('/api/calculation', function(req, res) {
                                 res.status(500).send({message: error});
                             });
 
-                            // request.post(config.cacheEndPoint, { cacheData }, function(setCacheErr, setCacheRes, setCacheBody) {
-                            //     if(setCacheErr){
-                            //         console.log("set cache error");
-                            //         console.log(setCacheErr);
-                            //     } else{
-                            //         console.log(setCacheBody);
-                            //     }
-                            // });
-
                             console.log(response);
                             res.send(response);
                         }

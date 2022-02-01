@@ -337,3 +337,11 @@ ASALocalRun/
 *.DS_Store
 
 out
+
+backend.txt
+backend.yaml
+frontend.txt
+frontend.yaml
+middleware.yaml
+redis.yaml
+containerapp.yaml
