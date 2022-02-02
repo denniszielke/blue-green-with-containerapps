@@ -4,6 +4,22 @@ param appInsightsName string = 'appins-${environmentName}'
 param redisName string = 'rds-${environmentName}'
 param location string = resourceGroup().location
 
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
+  name: logAnalyticsWorkspaceName
+  location: location
+  properties: any({
+    retentionInDays: 30
+    features: {
+      searchVersion: 1
+      legacy: 0
+      enableLogAccessUsingOnlyResourcePermissions: true
+    }
+    sku: {
+      name: 'PerGB2018'
+    }
+  })
+}
+
 resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-${resourceGroup().name}'
   location: resourceGroup().location
@@ -95,8 +111,8 @@ resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
     }
     containerAppsConfiguration: {
       daprAIInstrumentationKey: appInsights.properties.InstrumentationKey
-      controlPlaneSubnetResourceId : vnet.aca-control.id
-      appSubnetResourceId: vnet.aca-apps.id
+      controlPlaneSubnetResourceId : '${vnet.id}/subnets/aca-control'
+      appSubnetResourceId: '${vnet.id}/subnets/aca-apps'
       internalOnly: false
     }
   }
