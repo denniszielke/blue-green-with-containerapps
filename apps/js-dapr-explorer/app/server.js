@@ -5,10 +5,13 @@ const config = require('./config');
 const OS = require('os');
 const app = express();
   
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
+
 
 var publicDir = require('path').join(__dirname, '/public');
 app.use(express.static(publicDir));
+
+// var urlencodedParser = bodyParser.urlencoded({ extended: false });
+var jsonParser = bodyParser.json();
 
 app.get('/healthz', function(req, res) {
     res.send('OK');
@@ -33,7 +36,7 @@ app.post('/ping', function(req, res) {
 });
 
 
-app.post('/', urlencodedParser, (req, res) => {
+app.post('/', jsonParser, (req, res) => {
     console.log('Got body:', req.body);
 
     var url;
@@ -64,10 +67,13 @@ app.post('/', urlencodedParser, (req, res) => {
         console.log(text);
         res.status(200).send(text);
     }).catch((error) => {
+        console.log("failed to call " + url);
         console.log(error);
         res.status(500).send({message: error});
     });
 }); 
+
+//  curl -X POST http://127.0.0.1:3000  -F 'url=https://ipinfo.io/json' -F 'action=GET' 
 
 console.log(config);
 console.log(OS.hostname());

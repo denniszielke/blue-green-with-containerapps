@@ -49,6 +49,50 @@ else
     echo "vnet $VNET_RESOURCE_ID already exists"
 fi
 
+# NSG_RESOURCE_ID=$(az network nsg list -g $KUBE_GROUP --query "[?contains(name, '$APPGW_SUBNET_NAME')].id" -o tsv)
+# if [ "$NSG_RESOURCE_ID" == "" ]; then
+#     echo "creating nsgs..."
+
+#     az network nsg create --name $APPGW_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+#     APPGW_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $APPGW_SUBNET_NAME --query id -o tsv)
+#     APPGW_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --query id -o tsv)
+
+#     az network nsg rule create --name appgwrule --nsg-name $APPGW_SUBNET_NAME --resource-group $KUBE_GROUP --priority 110 \
+#     --source-address-prefixes '*' --source-port-ranges '*' \
+#     --destination-address-prefixes '*' --destination-port-ranges '*' --access Allow --direction Inbound \
+#     --protocol "*" --description "Required allow rule for AppGW."
+
+#     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $APPGW_SUBNET_NSG --ids $APPGW_SUBNET_ID
+
+#     az network nsg create --name $KUBE_ING_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+#     KUBE_ING_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
+#     KUBE_ING_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
+#     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $KUBE_ING_SUBNET_NSG --ids $KUBE_ING_SUBNET_ID
+#     az lock create --name $KUBE_ING_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $KUBE_ING_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+#     az network nsg create --name $KUBE_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+
+#     az network nsg rule create --name ingress --nsg-name $KUBE_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --priority 110 \
+#     --source-address-prefixes '*' --source-port-ranges '*' \
+#     --destination-address-prefixes '*' --destination-port-ranges 80 443 --access Allow --direction Inbound \
+#     --protocol "*" --description "Required to allow ingress."
+
+#     KUBE_AGENT_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $KUBE_AGENT_SUBNET_NAME --query id -o tsv)
+#     KUBE_AGENT_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --query id -o tsv)
+#     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $KUBE_AGENT_SUBNET_NSG --ids $KUBE_AGENT_SUBNET_ID
+#     az lock create --name $KUBE_AGENT_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $KUBE_AGENT_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+#     az network nsg create --name $POD_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+#     POD_AGENT_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $POD_AGENT_SUBNET_NAME --query id -o tsv)
+#     POD_AGENT_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $POD_AGENT_SUBNET_NAME --query id -o tsv)
+#     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $POD_AGENT_SUBNET_NSG --ids $POD_AGENT_SUBNET_ID
+#     az lock create --name $POD_AGENT_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $POD_AGENT_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+#     echo "cread and locked nsgs "
+# else
+#     echo "nsg $NSG_RESOURCE_ID already exists"
+# fi
+
 ACA_CONTROL_SUBNET_ID=$(az network vnet subnet show -g $RESOURCE_GROUP --vnet-name $ACA_VNET_NAME -n aca-control --query id -o tsv)
 ACA_APPS_SUBNET_ID=$(az network vnet subnet show -g $RESOURCE_GROUP --vnet-name $ACA_VNET_NAME -n aca-apps --query id -o tsv)
 
@@ -80,7 +124,7 @@ if [ "$ACA_APP_ENV_ID" == "" ]; then
     az containerapp env create -n $ACA_ENV_NAME -g $RESOURCE_GROUP --location "$LOCATION"  \
      --platform-reserved-cidr 10.2.0.0/21  --platform-reserved-dns-ip 10.2.0.10 --docker-bridge-cidr 172.17.0.1/16 \
      --logs-workspace-id $LOG_ANALYTICS_WORKSPACE_CLIENT_ID --logs-workspace-key $LOG_ANALYTICS_WORKSPACE_CLIENT_SECRET --instrumentation-key $AI_INSTRUMENTATION_KEY   \
-     --app-subnet-resource-id $ACA_APPS_SUBNET_ID --controlplane-subnet-resource-id $ACA_CONTROL_SUBNET_ID # --internal-only
+     --app-subnet-resource-id $ACA_APPS_SUBNET_ID --controlplane-subnet-resource-id $ACA_CONTROL_SUBNET_ID --internal-only
 
     ACA_APP_ENV_ID=$(az containerapp env show -g $RESOURCE_GROUP -n $ACA_ENV_NAME -o tsv --query id)
     echo "created app env $ACA_APP_ENV_ID"
@@ -103,7 +147,7 @@ if [ "$DNS_ZONE_ID" == "" ]; then
     az network private-dns zone create --resource-group $RESOURCE_GROUP --name $ENVIRONMENT_DEFAULT_DOMAIN
     az network private-dns link vnet create --resource-group $RESOURCE_GROUP --name $ACA_VNET_NAME --virtual-network $VNET_ID --zone-name $ENVIRONMENT_DEFAULT_DOMAIN -e true
     az network private-dns record-set a add-record --resource-group $RESOURCE_GROUP --record-set-name "*" --ipv4-address $ENVIRONMENT_STATIC_IP --zone-name $ENVIRONMENT_DEFAULT_DOMAIN
-    DNS_ZONE_ID=$(az network private-dns zone show -g $RESOURCE_GROUP -n $KUBE_NAME --query id -o tsv)
+    DNS_ZONE_ID=$(az network private-dns zone show -g $RESOURCE_GROUP -n $ENVIRONMENT_DEFAULT_DOMAIN --query id -o tsv)
     echo "created $DNS_ZONE_ID"
 else
     echo "dns zone $DNS_ZONE_ID already exists"

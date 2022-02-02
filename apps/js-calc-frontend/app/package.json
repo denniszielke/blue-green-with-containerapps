@@ -11,10 +11,10 @@
     "name": "dzielke"
   },
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.2",
     "morgan": "^1.10.0",
     "dotenv-extended": "^2.9.0",
-    "swagger-ui-express": "^4.1.6",
+    "swagger-ui-express": "^4.3.0",
     "request": "^2.88.2",
     "isomorphic-fetch": "^3.0.0"
   }
