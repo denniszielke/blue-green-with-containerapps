@@ -73,7 +73,8 @@ app.post('/', jsonParser, (req, res) => {
     });
 }); 
 
-//  curl -X POST http://127.0.0.1:3000  -F 'url=https://ipinfo.io/json' -F 'action=GET' 
+// curl -X POST http://127.0.0.1:3000  -F 'url=https://ipinfo.io/json' -F 'action=GET' 
+// curl -X POST https://x.azurecontainerapps.io -H "Content-Type: application/json"  -d '{ "url": "http://10.0.1.4:8080/ip" }'
 
 console.log(config);
 console.log(OS.hostname());

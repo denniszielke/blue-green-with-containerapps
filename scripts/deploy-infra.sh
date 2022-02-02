@@ -124,7 +124,7 @@ if [ "$ACA_APP_ENV_ID" == "" ]; then
     az containerapp env create -n $ACA_ENV_NAME -g $RESOURCE_GROUP --location "$LOCATION"  \
      --platform-reserved-cidr 10.2.0.0/21  --platform-reserved-dns-ip 10.2.0.10 --docker-bridge-cidr 172.17.0.1/16 \
      --logs-workspace-id $LOG_ANALYTICS_WORKSPACE_CLIENT_ID --logs-workspace-key $LOG_ANALYTICS_WORKSPACE_CLIENT_SECRET --instrumentation-key $AI_INSTRUMENTATION_KEY   \
-     --app-subnet-resource-id $ACA_APPS_SUBNET_ID --controlplane-subnet-resource-id $ACA_CONTROL_SUBNET_ID --internal-only
+     --app-subnet-resource-id $ACA_APPS_SUBNET_ID --controlplane-subnet-resource-id $ACA_CONTROL_SUBNET_ID #--internal-only
 
     ACA_APP_ENV_ID=$(az containerapp env show -g $RESOURCE_GROUP -n $ACA_ENV_NAME -o tsv --query id)
     echo "created app env $ACA_APP_ENV_ID"
