@@ -1,4 +1,4 @@
-name: deploy-dapr-explorer
+name: deploy-explorer
 on:
   push:
     branches: [ main ]

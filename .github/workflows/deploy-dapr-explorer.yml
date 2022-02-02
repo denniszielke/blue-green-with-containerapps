@@ -17,7 +17,7 @@ defaults:
     working-directory: apps
 
 env:
-  APP_NAME: js-dapr-explorer
+  APP_NAME: js-explorer
 
 jobs:
   build:
