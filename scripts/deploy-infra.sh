@@ -60,7 +60,7 @@ if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     az monitor log-analytics workspace create --resource-group $RESOURCE_GROUP --workspace-name $LOG_ANALYTICS_WORKSPACE_NAME --location $LOCATION -o none
     WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --workspace-name $LOG_ANALYTICS_WORKSPACE_NAME -o json | jq '.id' -r)
 
-    az monitor app-insights component create --app $LOG_ANALYTICS_WORKSPACE_NAME-ai --location $LOCATION --resource-group $RESOURCE_GROUP --application-type web --kind web --workspace $WORKSPACE_RESOURCE_ID
+    az monitor app-insights component create --app appins-env-$DEPLOYMENT_NAME --location $LOCATION --resource-group $RESOURCE_GROUP --application-type web --kind web --workspace $WORKSPACE_RESOURCE_ID
     
 else
     echo "workspace $WORKSPACE_RESOURCE_ID already exists"
@@ -70,7 +70,7 @@ ACA_APP_ENV_ID=$(az containerapp env list -g $RESOURCE_GROUP --query "[?contains
 if [ "$ACA_APP_ENV_ID" == "" ]; then
     echo "creating worker app env $ACA_APP_ENV_ID"
 
-    AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app $LOG_ANALYTICS_WORKSPACE_NAME-ai -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
+    AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app appins-env-$DEPLOYMENT_NAME -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
     LOG_ANALYTICS_WORKSPACE_CLIENT_ID=`az monitor log-analytics workspace show --query customerId -g $RESOURCE_GROUP -n $LOG_ANALYTICS_WORKSPACE_NAME -o tsv`
     LOG_ANALYTICS_WORKSPACE_CLIENT_SECRET=`az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $RESOURCE_GROUP -n $LOG_ANALYTICS_WORKSPACE_NAME -o tsv`
     echo "workspace id $LOG_ANALYTICS_WORKSPACE_CLIENT_ID"
@@ -86,7 +86,7 @@ if [ "$ACA_APP_ENV_ID" == "" ]; then
     echo "created app env $ACA_APP_ENV_ID"
 else
     echo "worker app env $ACA_APP_ENV_ID already exists"
-    AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app $LOG_ANALYTICS_WORKSPACE_NAME-ai -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
+    AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app appins-env-$DEPLOYMENT_NAME -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
 fi
 
 echo "application insights key $AI_INSTRUMENTATION_KEY"
