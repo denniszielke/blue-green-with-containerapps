@@ -39,7 +39,7 @@ fi
 
 echo "deploying $VERSION from $REGISTRY"
 
-AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app appins-env-$DEPLOYMENT_NAME -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
+AI_INSTRUMENTATION_KEY=$(az resource show -g $RESOURCE_GROUP -n appins-env-$DEPLOYMENT_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv | tr -d '[:space:]')
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
