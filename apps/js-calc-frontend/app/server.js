@@ -1,6 +1,20 @@
 require('dotenv-extended').load();
 const config = require('./config');
-
+var appInsights = require("applicationinsights");
+if (config.instrumentationKey){ 
+    appInsights.setup(config.instrumentationKey)
+    .setAutoDependencyCorrelation(true)
+    .setAutoCollectDependencies(true)
+    .setAutoCollectPerformance(true)
+    .setSendLiveMetrics(true)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
+    appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-frontend";
+    appInsights.start();
+    var client = appInsights.defaultClient;
+    client.commonProperties = {
+        slot: config.version
+    };
+}
 const express = require('express');
 const app = express();
 const morgan = require('morgan');

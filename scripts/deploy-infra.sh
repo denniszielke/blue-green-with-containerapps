@@ -20,7 +20,7 @@ ACA_VNET_NAME="vnet-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 LOG_ANALYTICS_WORKSPACE_NAME="logs-$ACA_ENV_NAME"
 AI_INSTRUMENTATION_KEY=""
-LOCATION="canadacentral"
+LOCATION="northeurope"
 
 if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
     echo "creating resource group $RESOURCE_GROUP..."

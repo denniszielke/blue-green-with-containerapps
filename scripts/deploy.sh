@@ -27,7 +27,6 @@ CONTAINERAPPS_ENVIRONMENT_NAME="env-$DEPLOYMENT_NAME" # Name of the ContainerApp
 REDIS_NAME="rds-env-$DEPLOYMENT_NAME"
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 CONTAINERAPPS_LOCATION="Central US EUAP"
-AI_INSTRUMENTATION_KEY=""
 LOCATION=$(az group show -n $RESOURCE_GROUP --query location -o tsv)
 az containerapp env list -g $RESOURCE_GROUP --query "[?contains(name, '$CONTAINERAPPS_ENVIRONMENT_NAME')].id" -o tsv
 
@@ -40,6 +39,7 @@ fi
 
 echo "deploying $VERSION from $REGISTRY"
 
+AI_INSTRUMENTATION_KEY=$(az monitor app-insights component show --app appins-env-$DEPLOYMENT_NAME -g $RESOURCE_GROUP --query "[instrumentationKey]" -o tsv)
 
 WORKER_BACKEND_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$BACKEND_APP_ID')].id" -o tsv)
 if [ "$WORKER_BACKEND_APP_ID" = "" ]; then
@@ -82,9 +82,11 @@ properties:
             value: $WORKER_BACKEND_APP_VERSION
           - name: PORT
             value: 8080
+          - name: INSTRUMENTATIONKEY
+            value: $AI_INSTRUMENTATION_KEY
           resources:
-              cpu: 0.5
-              memory: 1Gi
+              cpu: 1
+              memory: 2Gi
         scale:
           minReplicas: 0
           maxReplicas: 10
@@ -174,9 +176,11 @@ properties:
             value: $WORKER_BACKEND_APP_VERSION
           - name: PORT
             value: 8080
+          - name: INSTRUMENTATIONKEY
+            value: $AI_INSTRUMENTATION_KEY
           resources:
-              cpu: 0.5
-              memory: 1Gi
+              cpu: 1
+              memory: 2Gi
         scale:
           minReplicas: 0
           maxReplicas: 10
@@ -313,9 +317,11 @@ properties:
             value: http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method
           - name: CACHEENDPOINT
             value: http://localhost:3500/v1.0/state/redis
+          - name: INSTRUMENTATIONKEY
+            value: $AI_INSTRUMENTATION_KEY
           resources:
-              cpu: 0.5
-              memory: 1Gi
+              cpu: 1
+              memory: 2Gi
         scale:
           minReplicas: 0
           maxReplicas: 10
@@ -418,9 +424,11 @@ properties:
             value: http://localhost:3500/v1.0/invoke/$BACKEND_APP_ID/method
           - name: CACHEENDPOINT
             value: http://localhost:3500/v1.0/state/redis
+          - name: INSTRUMENTATIONKEY
+            value: $AI_INSTRUMENTATION_KEY
           resources:
-              cpu: 0.5
-              memory: 1Gi
+              cpu: 1
+              memory: 2Gi
         scale:
           minReplicas: 0
           maxReplicas: 10
