@@ -1,24 +1,10 @@
 param environmentName string
-param logAnalyticsWorkspaceName string = 'logs-${environmentName}'
-param appInsightsName string = 'appins-${environmentName}'
 param redisName string = 'rds-${environmentName}'
 param location string = resourceGroup().location
-
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
-  name: logAnalyticsWorkspaceName
-  location: location
-  properties: any({
-    retentionInDays: 30
-    features: {
-      searchVersion: 1
-      legacy: 0
-      enableLogAccessUsingOnlyResourcePermissions: true
-    }
-    sku: {
-      name: 'PerGB2018'
-    }
-  })
-}
+param logAnalyticsCustomerId string
+param logAnalyticsSharedKey string
+param appInsightsInstrumentationKey string
+param internalOnly bool
 
 resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-${resourceGroup().name}'
@@ -84,17 +70,6 @@ resource redisCache 'Microsoft.Cache/Redis@2019-07-01' = {
   }
 }
 
-resource appInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
-  name: appInsightsName
-  location: location
-  kind: 'web'
-  properties: { 
-    ApplicationId: appInsightsName
-    Application_Type: 'web'
-    Flow_Type: 'Redfield'
-    Request_Source: 'CustomDeployment'
-  }
-}
 
 resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
   name: environmentName
@@ -105,15 +80,15 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: logAnalyticsWorkspace.properties.customerId
-        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+        customerId: logAnalyticsCustomerId
+        sharedKey: logAnalyticsSharedKey
       }
     }
     containerAppsConfiguration: {
-      daprAIInstrumentationKey: appInsights.properties.InstrumentationKey
+      daprAIInstrumentationKey: appInsightsInstrumentationKey
       controlPlaneSubnetResourceId : '${vnet.id}/subnets/aca-control'
       appSubnetResourceId: '${vnet.id}/subnets/aca-apps'
-      internalOnly: true
+      internalOnly: internalOnly
     }
   }
 }

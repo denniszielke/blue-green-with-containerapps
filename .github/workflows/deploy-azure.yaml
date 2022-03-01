@@ -1,7 +1,11 @@
 name: deploy-infrastructure
 on:
   workflow_dispatch:
-
+    inputs:
+      internalOnly:
+        description: 'Internal Only Environment'     
+        required: true
+        default: 'false'
 permissions:
   id-token: write
   contents: read
@@ -22,5 +26,4 @@ jobs:
     - name: 'Run az commands'
       run: |
         az deployment group create -g ${{ secrets.RESOURCE_GROUP }} -f ./deploy/main.bicep \
-          -p \
-            minReplicas=0
+          -p internalOnly=${{ github.event.inputs.internalOnly }}
