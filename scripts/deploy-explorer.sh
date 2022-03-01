@@ -45,12 +45,12 @@ kind: containerapp
 location: $LOCATION
 name: $EXPLORER_APP_NAME
 resourceGroup: $RESOURCE_GROUP
-type: Microsoft.Web/containerApps
+type: Microsoft.App/containerApps
 tags:
     app: explorer
     version: $VERSION
 properties:
-    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
         activeRevisionsMode: single
         ingress:

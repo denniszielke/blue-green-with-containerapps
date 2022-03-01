@@ -55,13 +55,13 @@ kind: containerapp
 location: $LOCATION
 name: $BACKEND_APP_ID
 resourceGroup: $RESOURCE_GROUP
-type: Microsoft.Web/containerApps
+type: Microsoft.App/containerApps
 tags:
     app: backend
     version: $WORKER_BACKEND_APP_VERSION
     color: $COLOR
 properties:
-    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
         activeRevisionsMode: multiple
         ingress:
@@ -147,13 +147,13 @@ kind: containerapp
 location: $LOCATION
 name: $BACKEND_APP_ID
 resourceGroup: $RESOURCE_GROUP
-type: Microsoft.Web/containerApps
+type: Microsoft.App/containerApps
 tags:
     app: backend
     version: $WORKER_BACKEND_APP_VERSION
     color: $COLOR
 properties:
-    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
         activeRevisionsMode: multiple
         ingress:
@@ -286,13 +286,13 @@ kind: containerapp
 location: $LOCATION
 name: $FRONTEND_APP_ID
 resourceGroup: $RESOURCE_GROUP
-type: Microsoft.Web/containerApps
+type: Microsoft.App/containerApps
 tags:
     app: frontend
     version: $WORKER_FRONTEND_APP_VERSION
     color: $COLOR
 properties:
-    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
         activeRevisionsMode: multiple
         ingress:
@@ -391,13 +391,13 @@ kind: containerapp
 location: $LOCATION
 name: $FRONTEND_APP_ID
 resourceGroup: $RESOURCE_GROUP
-type: Microsoft.Web/containerApps
+type: Microsoft.App/containerApps
 tags:
     app: frontend
     version: $WORKER_FRONTEND_APP_VERSION
     color: $COLOR
 properties:
-    kubeEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/kubeEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
+    managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
         activeRevisionsMode: multiple
         ingress:
