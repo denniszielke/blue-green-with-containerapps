@@ -96,7 +96,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
   }
 }
 
-resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
   name: environmentName
   location: location
   properties: {
@@ -113,7 +113,7 @@ resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
       daprAIInstrumentationKey: appInsights.properties.InstrumentationKey
       controlPlaneSubnetResourceId : '${vnet.id}/subnets/aca-control'
       appSubnetResourceId: '${vnet.id}/subnets/aca-apps'
-      internalOnly: false
+      internalOnly: true
     }
   }
 }
