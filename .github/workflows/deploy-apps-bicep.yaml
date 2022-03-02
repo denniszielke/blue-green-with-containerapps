@@ -1,0 +1,36 @@
+name: deploy-infrastructure-with-apps
+on:
+  workflow_dispatch:
+    inputs:
+      explorerContainerImageTag:
+        description: 'Container Image Tag'     
+        required: true
+        default: '1918127540'
+      calculatorContainerImageTag:
+        description: 'Container Image Tag'     
+        required: true
+        default: '1887867090'
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy_infra:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 'Run az commands'
+      run: |
+        az deployment group create -g ${{ secrets.RESOURCE_GROUP }} -f ./deploy/apps.bicep \
+          -p containerImageTag=${{ github.event.inputs.internalOnly }} \
+          -p explorerImageTag=${{ github.event.inputs.explorerContainerImageTag }} \
+          -p calculatorImageTag=${{ github.event.inputs.calculatorContainerImageTag }} \
+          -p containerRegistryOwner=${{ github.repository_owner }}

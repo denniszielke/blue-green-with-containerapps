@@ -13,3 +13,6 @@ resource redisCache 'Microsoft.Cache/Redis@2019-07-01' = {
     }
   }
 }
+
+output redisHost string = redisCache.properties.hostName
+output redisPassword string = redisCache.listKeys().primaryKey
