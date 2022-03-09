@@ -16,6 +16,18 @@ resource daprexplorer 'Microsoft.App/containerapps@2022-01-01-preview' = {
         targetPort: 3000
         allowInsecure: false    
         transport: 'Auto'
+        traffic: [
+          {
+            latestRevision: true
+            weight: 100
+          }
+        ]
+      }
+      dapr: {
+        enabled: true
+        appId: 'js-explorer'
+        appPort: 3000
+        appProtocol: 'http'
       }
     }
     template: {
@@ -38,11 +50,6 @@ resource daprexplorer 'Microsoft.App/containerapps@2022-01-01-preview' = {
       scale: {
         minReplicas: 1
         maxReplicas: 4
-      }
-      dapr: {
-        enabled: true
-        appPort: 3000
-        appId: 'js-explorer'
       }
     }
   }

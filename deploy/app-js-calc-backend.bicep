@@ -17,6 +17,12 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
         allowInsecure: false    
         transport: 'Auto'
       }
+      dapr: {
+        enabled: true
+        appId: 'js-calc-backend'
+        appPort: 8080
+        appProtocol: 'http'
+      }
     }
     template: {
       containers: [
@@ -26,6 +32,22 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
           resources: {
             cpu: '1'
             memory: '2Gi'
+          }
+          probes: {
+            livenessProbe: {
+              httpGet: {
+                path: '/ping'
+                port: 8080
+              }
+              initialDelaySeconds: 5
+            }
+            readinessProbe: {
+              httpGet: {
+                path: '/ping'
+                port: 8080
+              }
+              initialDelaySeconds: 5
+            }
           }
           env:[
             {
@@ -57,11 +79,6 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
             }
           }
         ]
-      }
-      dapr: {
-        enabled: true
-        appPort: 8080
-        appId: 'js-calc-backend'
       }
     }
   }

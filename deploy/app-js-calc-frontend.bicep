@@ -5,6 +5,37 @@ param redisHost string
 param redisPassword string
 param containerImage string
 
+resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
+  name: '${environmentName}/redis'
+  kind: 'daprComponents'
+  location: location
+  properties: {
+    componentType : 'state.redis'
+    version: 'v1'
+    ignoreErrors: false
+    initTimeout: '60s'
+    secrets: [
+      {
+        name: 'redis-key'
+        value: redisPassword
+      }
+    ]
+    metadata : [
+      {
+        name: 'redisHost'
+        value: '${redisHost}:6379'
+      }
+      {
+        name: 'redisPassword'
+        secretRef: 'redis-key'
+      }
+    ]
+    scopes: [
+      'js-calc-frontend'
+    ]
+  }
+}
+
 resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
   name: 'js-calc-frontend'
   kind: 'containerapp'
@@ -25,6 +56,12 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
         value: redisPassword
       }
       ]
+      dapr: {
+        enabled: true
+        appId: 'js-calc-frontend'
+        appPort: 8080
+        appProtocol: 'http'
+      }
     }
     template: {
       containers: [
@@ -34,6 +71,23 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
           resources: {
             cpu: '1'
             memory: '2Gi'
+          }
+          probes: {
+            livenessProbe: {
+              httpGet: {
+                path: '/ping'
+                port: 8080
+              }
+              initialDelaySeconds: 5
+              periodSeconds: 5
+            }
+            readinessProbe: {
+              httpGet: {
+                path: '/ping'
+                port: 8080
+              }
+              initialDelaySeconds: 5
+            }
           }
           env:[
             {
@@ -67,31 +121,6 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
                 concurrentRequests: '10'
               }
             }
-          }
-        ]
-      }
-      dapr: {
-        enabled: true
-        appPort: 8080
-        appId: 'js-calc-frontend'
-        components: [
-          {
-            name: 'redis'
-            type: 'state.redis'
-            version: 'v1'
-            metadata: [
-              {
-                name: 'redisHost'
-                value: '${redisHost}:6379'
-              }
-              {
-                name: 'redisPassword'
-                value: redisPassword
-              }
-            ]
-            scope: [
-              'js-calc-frontend'
-            ]
           }
         ]
       }
