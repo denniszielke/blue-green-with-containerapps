@@ -5,11 +5,11 @@ on:
       explorerContainerImageTag:
         description: 'Container Image Tag'     
         required: true
-        default: '1918127540'
+        default: 'latest'
       calculatorContainerImageTag:
         description: 'Container Image Tag'     
         required: true
-        default: '1887867090'
+        default: 'latest'
 permissions:
   id-token: write
   contents: read

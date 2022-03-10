@@ -47,3 +47,6 @@ module jscalcfrontend 'app-js-calc-frontend.bicep' = {
     redisPassword: redis.outputs.redisPassword
   }
 }
+
+
+// az deployment group create -g dzca15cgithub -f ./deploy/apps.bicep -p explorerImageTag=latest -p calculatorImageTag=latest  -p containerRegistryOwner=denniszielke
