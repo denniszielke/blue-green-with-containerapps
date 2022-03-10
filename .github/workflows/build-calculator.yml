@@ -1,17 +1,10 @@
-name: deploy-full-blue-green
+# This is a basic workflow to help you get started with Actions
+name: build-calculator-images
+
+# Controls when the action will run. 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
-    paths:
-      - apps/js-calc-backend/**
-      - apps/js-calc-frontend/**
-
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
-permissions:
-  id-token: write
-  contents: read
 
 defaults:
   run:
@@ -45,30 +38,12 @@ jobs:
       run: |
         BACKEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$BACKEND_APP_NAME
         docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
+        docker tag $BACKEND_APP_NAME $BACKEND_IMAGE_ID:latest
         docker push $BACKEND_IMAGE_ID:${GITHUB_RUN_ID}
+        docker push $BACKEND_IMAGE_ID:latest
 
         FRONTEND_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$FRONTEND_APP_NAME
         docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
+        docker tag $FRONTEND_APP_NAME $FRONTEND_IMAGE_ID:latest
         docker push $FRONTEND_IMAGE_ID:${GITHUB_RUN_ID}
-
-  deploy:
-    runs-on: ubuntu-latest
-    name: deploy
-    needs: [build]
-    steps:
-    - uses: actions/checkout@v2
-    - name: 'Az CLI login'
-      uses: azure/login@v1
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-    - name: 'Run scripts'
-      run: |
-        ls -l 
-        cd $GITHUB_WORKSPACE/scripts
-        ls -l 
-        chmod +x ./deploy.sh
-        ./deploy.sh ${{ secrets.RESOURCE_GROUP }} ${GITHUB_RUN_ID} "ghcr.io/${{ github.repository_owner }}/container-apps"
-      shell: bash
+        docker push $FRONTEND_IMAGE_ID:latest

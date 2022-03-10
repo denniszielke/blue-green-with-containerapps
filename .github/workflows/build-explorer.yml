@@ -1,0 +1,40 @@
+# This is a basic workflow to help you get started with Actions
+name: build-explorer
+
+# Controls when the action will run. 
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: apps
+
+env:
+  APP_NAME: js-dapr-explorer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: build
+    permissions:
+      packages: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build image
+      run: |
+        cd $APP_NAME
+        docker build . --file Dockerfile --tag $APP_NAME --label "runnumber=${GITHUB_RUN_ID}"
+
+    - name: Log in to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Push image
+      run: |
+        APP_IMAGE_ID=ghcr.io/${{ github.repository_owner }}/container-apps/$APP_NAME
+        docker tag $APP_NAME $APP_IMAGE_ID:${GITHUB_RUN_ID}
+        docker tag $APP_NAME $APP_IMAGE_ID:latest
+        docker push $APP_IMAGE_ID:${GITHUB_RUN_ID}
+        docker push $APP_IMAGE_ID:latest
