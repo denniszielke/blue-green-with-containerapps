@@ -34,20 +34,20 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
             memory: '2Gi'
           }
           probes: {
-            livenessProbe: {
-              httpGet: {
-                path: '/ping'
-                port: 8080
-              }
-              initialDelaySeconds: 5
-            }
-            readinessProbe: {
-              httpGet: {
-                path: '/ping'
-                port: 8080
-              }
-              initialDelaySeconds: 5
-            }
+            // livenessProbe: {
+            //   httpGet: {
+            //     path: '/ping'
+            //     port: 8080
+            //   }
+            //   initialDelaySeconds: 5
+            // }
+            // readinessProbe: {
+            //   httpGet: {
+            //     path: '/ping'
+            //     port: 8080
+            //   }
+            //   initialDelaySeconds: 5
+            // }
           }
           env:[
             {

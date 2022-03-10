@@ -5,7 +5,7 @@ param redisHost string
 param redisPassword string
 param containerImage string
 
-resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
+    resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
   name: '${environmentName}/redis'
   kind: 'daprComponents'
   location: location
@@ -51,10 +51,10 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
         transport: 'Auto'
       }
       secrets: [
-      {
-        name: 'redis-key'
-        value: redisPassword
-      }
+        {
+          name: 'redis-key'
+          value: redisPassword
+        }
       ]
       dapr: {
         enabled: true
@@ -73,21 +73,21 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
             memory: '2Gi'
           }
           probes: {
-            livenessProbe: {
-              httpGet: {
-                path: '/ping'
-                port: 8080
-              }
-              initialDelaySeconds: 5
-              periodSeconds: 5
-            }
-            readinessProbe: {
-              httpGet: {
-                path: '/ping'
-                port: 8080
-              }
-              initialDelaySeconds: 5
-            }
+            // livenessProbe: {
+            //   httpGet: {
+            //     path: '/ping'
+            //     port: 8080
+            //   }
+            //   initialDelaySeconds: 5
+            //   periodSeconds: 5
+            // }
+            // readinessProbe: {
+            //   httpGet: {
+            //     path: '/ping'
+            //     port: 8080
+            //   }
+            //   initialDelaySeconds: 5
+            // }
           }
           env:[
             {
