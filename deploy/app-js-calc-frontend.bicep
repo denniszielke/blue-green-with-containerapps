@@ -7,8 +7,6 @@ param containerImage string
 
 resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
   name: '${environmentName}/redis'
-  kind: 'daprComponents'
-  location: location
   properties: {
     componentType : 'state.redis'
     version: 'v1'
@@ -35,6 +33,18 @@ resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprCom
     ]
   }
 }
+
+// resource jscalcmount 'Microsoft.App/managedEnvironments/storages@2022-01-01-preview' = {
+//   name: '${environmentName}/files'
+//   properties: {
+//     azureFile: {
+//       accountName: 'account1'
+//       accountKey: 'key'
+//       shareName: 'share1'
+//       accessMode: 'ReadOnly'
+//     }
+//   }
+// }
 
 resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
   name: 'js-calc-frontend'
@@ -72,23 +82,44 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
             cpu: '1'
             memory: '2Gi'
           }
-          // probes: {
-            // livenessProbe: {
-            //   httpGet: {
-            //     path: '/ping'
-            //     port: 8080
-            //   }
-            //   initialDelaySeconds: 5
-            //   periodSeconds: 5
-            // }
-            // readinessProbe: {
-            //   httpGet: {
-            //     path: '/ping'
-            //     port: 8080
-            //   }
-            //   initialDelaySeconds: 5
-            // }
-          // }
+          probes: [
+            {
+              type: 'liveness'
+              httpGet: {
+                path: '/ping'
+                port: 8080
+                httpHeaders: [
+                  {
+                    name: 'my-header'
+                    value: 'ping'
+                  }
+                ]
+              }
+              initialDelaySeconds: 5
+              periodSeconds: 3
+            }
+            {
+              type: 'readiness'
+              httpGet: {
+                path: '/ping'
+                port: 8080
+                httpHeaders: [
+                  {
+                    name: 'my-header'
+                    value: 'ping'
+                  }
+                ]
+              }
+              initialDelaySeconds: 5
+              periodSeconds: 3
+            }
+          ]
+          // volumeMounts: [
+          //   {
+          //     mountPath: '/mnt/files'
+          //     volumeName: 'mystate'
+          //   }
+          // ]
           env:[
             {
               name: 'PORT'
