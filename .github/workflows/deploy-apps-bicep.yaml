@@ -30,7 +30,6 @@ jobs:
     - name: 'Run az commands'
       run: |
         az deployment group create -g ${{ secrets.RESOURCE_GROUP }} -f ./deploy/apps.bicep \
-          -p containerImageTag=${{ github.event.inputs.internalOnly }} \
-          -p explorerImageTag=${{ github.event.inputs.explorerContainerImageTag }} \
-          -p calculatorImageTag=${{ github.event.inputs.calculatorContainerImageTag }} \
+          -p explorerImageTag=$VERSION \
+          -p calculatorImageTag=$VERSION \
           -p containerRegistryOwner=${{ github.repository_owner }}
