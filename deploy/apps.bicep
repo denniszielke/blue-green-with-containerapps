@@ -11,6 +11,14 @@ module redis 'redis.bicep' = {
   }
 }
 
+
+module storage 'storage.bicep' = {
+  name: 'container-app-storage'
+  params: {
+    storageAccountName: 'strg${resourceGroup().name}'
+  }
+}
+
 module logging 'logging.bicep' = {
   name: 'container-app-logging'
   params: {
@@ -45,6 +53,8 @@ module jscalcfrontend 'app-js-calc-frontend.bicep' = {
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
     redisHost: redis.outputs.redisHost
     redisPassword: redis.outputs.redisPassword
+    filesAccountName: storage.outputs.filesEndpoint
+    filesAccountKey: storage.outputs.filesAccessKey
   }
 }
 

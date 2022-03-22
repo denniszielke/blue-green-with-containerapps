@@ -4,6 +4,8 @@ param appInsightsInstrumentationKey string
 param redisHost string
 param redisPassword string
 param containerImage string
+param filesAccountName string
+param filesAccountKey  string
 
 resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
   name: '${environmentName}/redis'
@@ -38,10 +40,10 @@ resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprCom
 //   name: '${environmentName}/files'
 //   properties: {
 //     azureFile: {
-//       accountName: 'account1'
-//       accountKey: 'key'
-//       shareName: 'share1'
-//       accessMode: 'ReadOnly'
+//       accountName: filesAccountName
+//       accountKey: filesAccountKey
+//       shareName: 'files'
+//       accessMode: 'ReadWrite'
 //     }
 //   }
 // }
@@ -117,13 +119,17 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
           // volumeMounts: [
           //   {
           //     mountPath: '/mnt/files'
-          //     volumeName: 'mystate'
+          //     volumeName: 'files'
           //   }
           // ]
           env:[
             {
               name: 'PORT'
               value: '8080'
+            }
+            {
+              name: 'WRITEPATH'
+              value: '/mnt/files/'
             }
             {
               name: 'VERSION'
@@ -136,6 +142,10 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
             {
               name: 'INSTRUMENTATIONKEY'
               value: appInsightsInstrumentationKey
+            }
+            {
+              name: 'CACHEENDPOINT'
+              value: 'http://localhost:3500/v1.0/state/redis'
             }
           ]
         }
