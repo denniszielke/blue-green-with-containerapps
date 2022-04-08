@@ -3,10 +3,10 @@
 set -e
 
 # az extension remove -n containerapp
-# EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
-# if [ "$EXTENSION" = "" ]; then
-    az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.2-py2.py3-none-any.whl -y
-# fi
+EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
+if [ "$EXTENSION" = "" ]; then
+    az extension add -n containerapp -y
+fi
 
 # calculator properties
 EXPLORER_APP_NAME="js-dapr-explorer"
@@ -38,20 +38,23 @@ fi
 echo "deploying $VERSION from $REGISTRY"
 
 echo "creating middleware components"
-DAPR_COMPONENTS="" # --dapr-components ./middleware.yaml"
 cat <<EOF > middleware.yaml
-- name: ratelimit
-  type: middleware.http.ratelimit
-  version: v1
-  metadata:
+componentType: middleware.http.ratelimit
+version: v1
+ignoreErrors: false
+initTimeout: '60s'
+metadata:
   - name: maxRequestsPerSecond
     value: 2
+scopes:
+  - $EXPLORER_APP_NAME
 EOF
 
-EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
+# az containerapp env dapr-component set --dapr-component-name ratelimit --name $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP --yaml middleware.yaml
+
+EXPLORER_APP_VERSION="explorer $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
-
 
 cat <<EOF > containerapp.yaml
 kind: containerapp
@@ -74,6 +77,10 @@ properties:
             - latestRevision: true
               weight: 100
             transport: Auto
+        dapr:
+          enabled: true
+          appPort: 3000
+          appId: $EXPLORER_APP_NAME
     template:
         revisionSuffix: $VERSION
         containers:
@@ -96,10 +103,6 @@ properties:
               type: http
               metadata:
                 concurrentRequests: 10
-        dapr:
-          enabled: true
-          appPort: 3000
-          appId: $EXPLORER_APP_NAME
 EOF
 
 if [ "$EXPLORER_APP_ID" = "" ]; then
@@ -123,8 +126,6 @@ else
     az containerapp revision list -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
 
 fi
-
-EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp show -g $RESOURCE_GROUP -n $EXPLORER_APP_NAME -o tsv --query id)
 EXPLORER_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $EXPLORER_APP_NAME --query "configuration.ingress.fqdn" -o tsv)

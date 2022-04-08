@@ -3,10 +3,10 @@
 set -e
 
 # az extension remove -n containerapp
-# EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
-# if [ "$EXTENSION" = "" ]; then
-    az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.2-py2.py3-none-any.whl -y
-# fi
+EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
+if [ "$EXTENSION" = "" ]; then
+    az extension add -n containerapp -y
+fi
 
 # calculator properties
 EXPLORER_APP_NAME="js-explorer"
@@ -36,7 +36,7 @@ fi
 
 echo "deploying $VERSION from $REGISTRY"
 
-EXPLORER_APP_VERSION="backend $COLOR - $VERSION"
+EXPLORER_APP_VERSION="explorer $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
 

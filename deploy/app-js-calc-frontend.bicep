@@ -151,11 +151,11 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
         }
       ]
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 4
         rules: [
           {
-            name: 'httprule'
+            name: 'frontendrule'
             custom: {
               type: 'http'
               metadata: {

@@ -3,10 +3,10 @@
 set -e
 
 # az extension remove -n containerapp
-# EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
-# if [ "$EXTENSION" = "" ]; then
-    az extension add --source https://workerappscliextension.blob.core.windows.net/azure-cli-extension/containerapp-0.2.2-py2.py3-none-any.whl -y
-# fi
+EXTENSION=$(az extension list --query "[?contains(name, 'containerapp')].name" -o tsv)
+if [ "$EXTENSION" = "" ]; then
+    az extension add -n containerapp -y
+fi
 
 # calculator properties
 FRONTEND_APP_ID="js-calc-frontend"
@@ -72,6 +72,10 @@ properties:
             - latestRevision: true
               weight: 100
             transport: Auto
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $BACKEND_APP_ID
     template:
         revisionSuffix: $VERSION
         containers:
@@ -88,43 +92,39 @@ properties:
               cpu: 1
               memory: 2Gi
         scale:
-          minReplicas: 0
-          maxReplicas: 10
+          minReplicas: 1
+          maxReplicas: 4
           rules:
           - name: httprule
             custom:
               type: http
               metadata:
                 concurrentRequests: 10
-        dapr:
-          enabled: true
-          appPort: 8080
-          appId: $BACKEND_APP_ID
 EOF
 
 
     az containerapp create  -n $BACKEND_APP_ID -g $RESOURCE_GROUP --yaml backend.yaml
 
-    az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+    az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:properties.configuration.ingress.fqdn,ProvisioningState:properties.provisioningState}" --out table
 
-    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
     WORKER_BACKEND_APP_ID=$(az containerapp show -g $RESOURCE_GROUP -n $BACKEND_APP_ID -o tsv --query id)
-    WORKER_BACKEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
+    WORKER_BACKEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "properties.configuration.ingress.fqdn" -o tsv)
     echo "created app $BACKEND_APP_ID running under $WORKER_BACKEND_FQDN"
 else
     echo "making sure that there is only one active revision out there"
 
-    EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
+    EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
 
     while [ "$EXTRA_REVISION" != "" ]; 
     do
         echo "deactivating extra revision $EXTRA_REVISION"
         az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $EXTRA_REVISION;
-        EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
+        EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
     done
 
-    IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
+    IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Version:properties.template.containers[0].env[0].value,Created:properties.createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
     echo "existing app is using color $IS_GREEN"
     COLOR="green"
     if  grep -q "green" <<< "$IS_GREEN" ; then
@@ -132,11 +132,11 @@ else
         echo "using blue"
     fi
 
-    WORKER_BACKEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
+    WORKER_BACKEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "properties.configuration.ingress.fqdn" -o tsv)
     echo "worker app $WORKER_BACKEND_APP_ID already exists running under $WORKER_BACKEND_FQDN"
-    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
-    OLD_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+    OLD_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
 
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
 
@@ -166,6 +166,10 @@ properties:
             - revisionName: $OLD_BACKEND_RELEASE_NAME
               weight: 100
             transport: Auto
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $BACKEND_APP_ID
     template:
         revisionSuffix: $VERSION
         containers:
@@ -182,29 +186,27 @@ properties:
               cpu: 1
               memory: 2Gi
         scale:
-          minReplicas: 0
-          maxReplicas: 10
+          minReplicas: 1
+          maxReplicas: 4
           rules:
           - name: httprule
             custom:
               type: http
               metadata:
                 concurrentRequests: 10
-        dapr:
-          enabled: true
-          appPort: 8080
-          appId: $BACKEND_APP_ID
 EOF
 
     az containerapp update  -n $BACKEND_APP_ID -g $RESOURCE_GROUP --yaml backend.yaml
 
-    az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+    az containerapp show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --query "{FQDN:properties.configuration.ingress.fqdn,ProvisioningState:properties.provisioningState}" --out table
 
-    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    echo "$BACKEND_APP_ID has the following revisions:"
 
-    NEW_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+    az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
-    WORKER_BACKEND_REVISION_FQDN=$(az containerapp revision show --resource-group $RESOURCE_GROUP --app $BACKEND_APP_ID --name $NEW_BACKEND_RELEASE_NAME --query "fqdn" -o tsv)
+    NEW_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+
+    WORKER_BACKEND_REVISION_FQDN=$(az containerapp revision show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --revision $NEW_BACKEND_RELEASE_NAME --query "properties.fqdn" -o tsv)
 
     echo "revision fqdn is $WORKER_BACKEND_REVISION_FQDN"
 
@@ -218,26 +220,18 @@ EOF
     if [ $RES_BACKEND = "301" ]; then
        
         echo "backend is up and running and responded with $RES_BACKEND"
-        # echo "increasing traffic split to 50/50"
-        # az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=50,latest=50
-
-        # sleep 10
         
-        # curl $WORKER_BACKEND_REVISION_FQDN/ping
-
-        # sleep 10
-        
-        echo "increasing traffic split to 0/100"
-        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0,latest=100
+        # echo "increasing traffic split to 0/100"
+        az containerapp ingress traffic set --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0 latest=100
         sleep 5
 
         echo "deactivating $OLD_BACKEND_RELEASE_NAME"
 
-        az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $OLD_BACKEND_RELEASE_NAME 
+        az containerapp revision deactivate --name $BACKEND_APP_ID -g $RESOURCE_GROUP --revision $OLD_BACKEND_RELEASE_NAME 
 
         sleep 5
 
-        az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+        az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
         WORKER_BACKEND_FQDN=$WORKER_BACKEND_REVISION_FQDN
 
@@ -245,12 +239,12 @@ EOF
         echo "backend responded with $RES_BACKEND - deployment failed"
         
         echo "bringing back the old revision $OLD_BACKEND_RELEASE_NAME"
-        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100,latest=0
+        az containerapp ingress traffic set --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100 latest=0
         
         sleep 5
 
         echo "deleting latest backend revision $NEW_BACKEND_RELEASE_NAME"
-        az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $NEW_BACKEND_RELEASE_NAME 
+        az containerapp revision deactivate --name $BACKEND_APP_ID -g $RESOURCE_GROUP --revision $NEW_BACKEND_RELEASE_NAME 
 
         exit
     fi
@@ -262,13 +256,25 @@ echo "checking redis components"
 
 REDIS_ID=$(az redis list -g $RESOURCE_GROUP --query "[?contains(name, '$REDIS_NAME')].id" -o tsv)
 if [ "$REDIS_ID" = "" ]; then
-    echo "no redis found"
+  echo "no redis found"
 else
+  echo "found redis instance $REDIS_ID"
+  REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
+  REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" -o tsv )
 
-    echo "found redis instance $REDIS_ID"
+cat <<EOF > redis.yaml
+componentType: state.redis
+version: v1
+metadata:
+- name: redisHost 
+  value: $REDIS_HOST:6379
+- name: redisPassword
+  value: $REDIS_KEY
+scopes:
+  - $FRONTEND_APP_ID
+EOF
 
-REDIS_HOST=$(az redis show -g $RESOURCE_GROUP --name $REDIS_NAME --query "hostName" -o tsv)
-REDIS_KEY=$(az redis list-keys -g $RESOURCE_GROUP --name $REDIS_NAME --query "primaryKey" -o tsv )
+az containerapp env dapr-component set --dapr-component-name redis --name $CONTAINERAPPS_ENVIRONMENT_NAME -g $RESOURCE_GROUP --yaml redis.yaml
 
 fi
 
@@ -303,6 +309,10 @@ properties:
             - latestRevision: true
               weight: 100
             transport: Auto
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $FRONTEND_APP_ID
     template:
         revisionSuffix: $VERSION
         containers:
@@ -323,64 +333,51 @@ properties:
               cpu: 1
               memory: 2Gi
         scale:
-          minReplicas: 0
-          maxReplicas: 10
+          minReplicas: 1
+          maxReplicas: 4
           rules:
           - name: httprule
             custom:
               type: http
               metadata:
                 concurrentRequests: 10
-        dapr:
-          enabled: true
-          appPort: 8080
-          appId: $FRONTEND_APP_ID
-          components:
-          - name: redis
-            type: state.redis
-            version: v1
-            metadata:
-            - name: redisHost 
-              value: $REDIS_HOST:6379
-            - name: redisPassword
-              value: $REDIS_KEY
 EOF
 
     az containerapp create  -n $FRONTEND_APP_ID -g $RESOURCE_GROUP --yaml frontend.yaml
 
-    az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+    az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:properties.configuration.ingress.fqdn,ProvisioningState:properties.provisioningState}" --out table
 
-    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
     WORKER_FRONTEND_APP_ID=$(az containerapp show -g $RESOURCE_GROUP -n $FRONTEND_APP_ID -o tsv --query id)
-    WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
+    WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "properties.configuration.ingress.fqdn" -o tsv)
     echo "created app $FRONTEND_APP_ID running under $WORKER_FRONTEND_FQDN"
 else
 
     echo "making sure that there is only one active revision out there"
 
-    EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
+    EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
 
     while [ "$EXTRA_REVISION" != "" ]; 
     do
         echo "deactivating extra revision $EXTRA_REVISION"
         az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $EXTRA_REVISION;
-        EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
+        EXTRA_REVISION=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [1].Revision' -o tsv)   
     done
 
     COLOR="green"
-    IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Version:template.containers[0].env[0].value,Created:createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
+    IS_GREEN=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Version:properties.template.containers[0].env[0].value,Created:properties.createdTime}[?Active!=`false`], &Created))| [0].Version' -o tsv)   
     echo "existing app is using color $IS_GREEN"
     if  grep -q "green" <<< "$IS_GREEN" ; then
         COLOR="blue"
         echo "using blue"
     fi
 
-    WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
+    WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "properties.configuration.ingress.fqdn" -o tsv)
     echo "worker app $WORKER_FRONTEND_APP_ID already exists running under $WORKER_FRONTEND_FQDN"
-    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
-    OLD_FRONTEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+    OLD_FRONTEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
 
     WORKER_FRONTEND_APP_VERSION="frontend $COLOR - $VERSION"
 
@@ -410,6 +407,10 @@ properties:
             - revisionName: $OLD_FRONTEND_RELEASE_NAME
               weight: 100
             transport: Auto
+        dapr:
+          enabled: true
+          appPort: 8080
+          appId: $FRONTEND_APP_ID
     template:
         revisionSuffix: $VERSION
         containers:
@@ -430,38 +431,27 @@ properties:
               cpu: 1
               memory: 2Gi
         scale:
-          minReplicas: 0
-          maxReplicas: 10
+          minReplicas: 1
+          maxReplicas: 4
           rules:
           - name: httprule
             custom:
               type: http
               metadata:
                 concurrentRequests: 10
-        dapr:
-          enabled: true
-          appPort: 8080
-          appId: $FRONTEND_APP_ID
-          components:
-          - name: redis
-            type: state.redis
-            version: v1
-            metadata:
-            - name: redisHost 
-              value: $REDIS_HOST:6379
-            - name: redisPassword
-              value: $REDIS_KEY
 EOF
 
     az containerapp update  -n $FRONTEND_APP_ID -g $RESOURCE_GROUP --yaml frontend.yaml
 
-    az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:configuration.ingress.fqdn,ProvisioningState:provisioningState}" --out table
+    az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "{FQDN:properties.configuration.ingress.fqdn,ProvisioningState:properties.provisioningState}" --out table
 
-    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+    echo "$BACKEND_APP_ID has the following revisions:"
 
-    NEW_FRONTEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+    az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
-    WORKER_FRONTEND_REVISION_FQDN=$(az containerapp revision show --resource-group $RESOURCE_GROUP --app $FRONTEND_APP_ID --name $NEW_FRONTEND_RELEASE_NAME --query "fqdn" -o tsv)
+    NEW_FRONTEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
+
+    WORKER_FRONTEND_REVISION_FQDN=$(az containerapp revision show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --revision $NEW_FRONTEND_RELEASE_NAME --query "properties.fqdn" -o tsv)
 
     echo "revision fqdn is $WORKER_FRONTEND_REVISION_FQDN"
 
@@ -475,46 +465,42 @@ EOF
     if [ $RES_FRONTEND = "301" ]; then
 
         echo "frontend is up and running and responded with $RES_FRONTEND"
-        # echo "increasing traffic split to 50/50"
-        # az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=50,latest=50
-
-        # sleep 10
         
         echo "increasing traffic split to 0/100"
-        az containerapp update --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0,latest=100
+        az containerapp ingress traffic set --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0 latest=100
         sleep 5
 
         echo "deactivating $OLD_FRONTEND_RELEASE_NAME"
-        az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $OLD_FRONTEND_RELEASE_NAME 
+        az containerapp revision deactivate --name $FRONTEND_APP_ID -g $RESOURCE_GROUP --revision $OLD_FRONTEND_RELEASE_NAME 
 
         sleep 5
 
-        az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:replicas,Active:active,Created:createdTime,FQDN:fqdn}" -o table
+        az containerapp revision list -g $RESOURCE_GROUP -n $FRONTEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
-        WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "configuration.ingress.fqdn" -o tsv)
+        WORKER_FRONTEND_FQDN=$(az containerapp show --resource-group $RESOURCE_GROUP --name $FRONTEND_APP_ID --query "properties.configuration.ingress.fqdn" -o tsv)
 
     else
         echo "frontend responded with $RES_FRONTEND - deployment failed"
 
         echo "activating previous backend revison $OLD_BACKEND_RELEASE_NAME again"
-        az containerapp revision activate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $OLD_BACKEND_RELEASE_NAME 
+        az containerapp revision activate --name $BACKEND_APP_ID -g $RESOURCE_GROUP --revision $OLD_BACKEND_RELEASE_NAME 
         
         sleep 5
 
-        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100,latest=0
+        az containerapp ingress traffic set --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=100 latest=0
 
         sleep 5
 
         echo "deleting latest backend revision $NEW_BACKEND_RELEASE_NAME"
-        az containerapp revision deactivate --app $BACKEND_APP_ID -g $RESOURCE_GROUP --name $NEW_BACKEND_RELEASE_NAME 
+        az containerapp revision deactivate --name $BACKEND_APP_ID -g $RESOURCE_GROUP --revision $NEW_BACKEND_RELEASE_NAME 
 
         echo "bringing back the original frontend release $OLD_FRONTEND_RELEASE_NAME"
-        az containerapp update --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=100,latest=0
+        az containerapp ingress traffic set --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=100 latest=0
 
         sleep 5
 
         echo "deleting latest frontend revision $NEW_FRONTEND_RELEASE_NAME again"
-        az containerapp revision deactivate --app $FRONTEND_APP_ID -g $RESOURCE_GROUP --name $NEW_FRONTEND_RELEASE_NAME 
+        az containerapp revision deactivate --name $FRONTEND_APP_ID -g $RESOURCE_GROUP --revision $NEW_FRONTEND_RELEASE_NAME 
         exit
     fi
     
