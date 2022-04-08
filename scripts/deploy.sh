@@ -95,7 +95,7 @@ properties:
           minReplicas: 1
           maxReplicas: 4
           rules:
-          - name: httprule
+          - name: backendrule
             custom:
               type: http
               metadata:
@@ -189,7 +189,7 @@ properties:
           minReplicas: 1
           maxReplicas: 4
           rules:
-          - name: httprule
+          - name: backendrule
             custom:
               type: http
               metadata:
@@ -336,7 +336,7 @@ properties:
           minReplicas: 1
           maxReplicas: 4
           rules:
-          - name: httprule
+          - name: frontendrule
             custom:
               type: http
               metadata:
@@ -434,7 +434,7 @@ properties:
           minReplicas: 1
           maxReplicas: 4
           rules:
-          - name: httprule
+          - name: frontendrule
             custom:
               type: http
               metadata:
