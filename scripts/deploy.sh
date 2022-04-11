@@ -138,6 +138,8 @@ else
 
     OLD_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
 
+    echo "existing release has name $OLD_BACKEND_RELEASE_NAME"
+
     WORKER_BACKEND_APP_VERSION="backend $COLOR - $VERSION"
 
     echo "deploying new revision of $WORKER_BACKEND_APP_ID of $WORKER_BACKEND_APP_VERSION" 
@@ -206,9 +208,11 @@ EOF
 
     NEW_BACKEND_RELEASE_NAME=$(az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query 'reverse(sort_by([].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}[?Active!=`false`], &Created))| [0].Revision' -o tsv)
 
+    echo "new revision is named $NEW_BACKEND_RELEASE_NAME"
+
     WORKER_BACKEND_REVISION_FQDN=$(az containerapp revision show --resource-group $RESOURCE_GROUP --name $BACKEND_APP_ID --revision $NEW_BACKEND_RELEASE_NAME --query "properties.fqdn" -o tsv)
 
-    echo "revision fqdn is $WORKER_BACKEND_REVISION_FQDN"
+    echo "new revision fqdn is $WORKER_BACKEND_REVISION_FQDN"
 
     sleep 10
     
@@ -222,7 +226,7 @@ EOF
         echo "backend is up and running and responded with $RES_BACKEND"
         
         # echo "increasing traffic split to 0/100"
-        az containerapp ingress traffic set --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0 latest=100
+        az containerapp ingress traffic set --name $BACKEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_BACKEND_RELEASE_NAME=0 $NEW_BACKEND_RELEASE_NAME=100
         sleep 5
 
         echo "deactivating $OLD_BACKEND_RELEASE_NAME"
@@ -234,6 +238,8 @@ EOF
         az containerapp revision list -g $RESOURCE_GROUP -n $BACKEND_APP_ID --query "[].{Revision:name,Replicas:properties.replicas,Active:properties.active,Created:properties.createdTime,FQDN:properties.fqdn}" -o table
 
         WORKER_BACKEND_FQDN=$WORKER_BACKEND_REVISION_FQDN
+
+        echo "production revision $NEW_BACKEND_RELEASE_NAME is now $WORKER_BACKEND_FQDN"
 
     else
         echo "backend responded with $RES_BACKEND - deployment failed"
@@ -467,7 +473,7 @@ EOF
         echo "frontend is up and running and responded with $RES_FRONTEND"
         
         echo "increasing traffic split to 0/100"
-        az containerapp ingress traffic set --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0 latest=100
+        az containerapp ingress traffic set --name $FRONTEND_APP_ID --resource-group $RESOURCE_GROUP --traffic-weight $OLD_FRONTEND_RELEASE_NAME=0 $NEW_FRONTEND_RELEASE_NAME=100
         sleep 5
 
         echo "deactivating $OLD_FRONTEND_RELEASE_NAME"
