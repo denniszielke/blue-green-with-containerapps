@@ -26,5 +26,6 @@ module environment 'environment.bicep' = {
     logAnalyticsCustomerId: logging.outputs.logAnalyticsCustomerId
     logAnalyticsSharedKey: logging.outputs.logAnalyticsSharedKey
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
+    appInsightsConnectionString: logging.outputs.appInsightsConnectionString
   }
 }

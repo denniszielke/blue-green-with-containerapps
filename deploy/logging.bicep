@@ -33,3 +33,4 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08
 output logAnalyticsCustomerId string = logAnalyticsWorkspace.properties.customerId
 output logAnalyticsSharedKey string = logAnalyticsWorkspace.listKeys().primarySharedKey
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
+output appInsightsConnectionString string = appInsights.properties.ConnectionString

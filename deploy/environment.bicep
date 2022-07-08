@@ -4,6 +4,7 @@ param location string = resourceGroup().location
 param logAnalyticsCustomerId string
 param logAnalyticsSharedKey string
 param appInsightsInstrumentationKey string
+param appInsightsConnectionString string
 param internalOnly bool
 
 resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
@@ -71,12 +72,10 @@ resource redisCache 'Microsoft.Cache/Redis@2019-07-01' = {
 }
 
 
-resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
+resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
   name: environmentName
   location: location
   properties: {
-    type: 'managed'
-    internalLoadBalancerEnabled: false
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -84,12 +83,17 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
         sharedKey: logAnalyticsSharedKey
       }
     }
-    containerAppsConfiguration: {
-      daprAIInstrumentationKey: appInsightsInstrumentationKey
-      controlPlaneSubnetResourceId : '${vnet.id}/subnets/aca-control'
-      appSubnetResourceId: '${vnet.id}/subnets/aca-apps'
-      internalOnly: internalOnly
+    daprAIConnectionString: appInsightsConnectionString
+    daprAIInstrumentationKey: appInsightsInstrumentationKey
+    vnetConfiguration: {
+      dockerBridgeCidr: '172.17.0.1/16'
+      infrastructureSubnetId: '${vnet.id}/subnets/aca-control'
+      internal: internalOnly
+      platformReservedCidr: '10.2.0.0/20'
+      platformReservedDnsIP: '10.2.0.10'
+      runtimeSubnetId: '${vnet.id}/subnets/aca-apps'
     }
+    zoneRedundant: true
   }
 }
 
