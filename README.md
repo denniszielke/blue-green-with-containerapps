@@ -36,9 +36,9 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 We will create a service principal and grant it permissions on a dedicated resource group
 
 ```
-DEPLOYMENT_NAME="dzca15cgithub" # here the deployment
+DEPLOYMENT_NAME="dzca13cgithub" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
-LOCATION="northeurope" # azure region can only be canadacentral or northeurope
+LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 GHUSER="denniszielke" # replace with your user name
 GHREPO="blue-green-with-containerapps" # here the repo name
@@ -72,6 +72,15 @@ The nice thing about this is that you do NOT need to configure a client secret.
 If the permission and the application registration are set up correctly you can trigger the deployment of the Azure resources by running the `deploy-infrastructure` workflow manually.
 
 ![](/img/wfresources.png)
+
+### Deployment of the azure resources via cli
+
+```
+DEPLOYMENT_NAME="dzca13cgithub" # here the deployment
+RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
+LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
+bash ./scripts/deploy-infra-bicep.sh $DEPLOYMENT_NAME $LOCATION
+```
 
 ### Triggering blue/green deployments
 

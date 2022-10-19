@@ -72,9 +72,12 @@ resource redisCache 'Microsoft.Cache/Redis@2019-07-01' = {
 }
 
 
-resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2022-06-01-preview' = {
   name: environmentName
   location: location
+  sku: {
+    name: 'Consumption'
+  }
   properties: {
     appLogsConfiguration: {
       destination: 'log-analytics'
@@ -92,8 +95,12 @@ resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
       platformReservedCidr: '10.2.0.0/20'
       platformReservedDnsIP: '10.2.0.10'
       runtimeSubnetId: '${vnet.id}/subnets/aca-apps'
+      outboundSettings : {
+        outBoundType: 'LoadBalancer'
+      } 
     }
-    zoneRedundant: true
+    zoneRedundant: false
+    useLegionServerlessCompute: false
   }
 }
 

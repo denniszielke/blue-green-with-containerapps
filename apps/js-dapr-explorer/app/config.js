@@ -10,6 +10,9 @@ if (config.instrumentationKey && config.instrumentationKey == "dummyValue")
 config.port = process.env.PORT || 3000;
 config.writepath = process.env.WRITEPATH;
 config.version = "default - latest";
+config.livenessDelay = 30;
+config.readinessDelay = 60;
+config.startupDelay = 30;
 
 if (process.env.VERSION && process.env.VERSION.length > 0)
 {

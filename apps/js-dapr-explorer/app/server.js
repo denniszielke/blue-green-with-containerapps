@@ -28,6 +28,15 @@ app.use(express.static(publicDir));
 // var urlencodedParser = bodyParser.urlencoded({ extended: false });
 var jsonParser = bodyParser.json();
 
+app.get('/ready', function(req, res) {
+    var current = new Date();
+    var current = performance.now();
+    var timeDiff = current - launchTime;
+    timeDiff /= 1000; 
+    var seconds = Math.round(timeDiff);
+    res.send('OK');
+});
+
 app.get('/healthz', function(req, res) {
     res.send('OK');
 });
@@ -107,3 +116,5 @@ console.log(config);
 console.log(OS.hostname());
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);
+var launchTime = performance.now();
+console.log("Started at " + launchTime);

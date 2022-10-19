@@ -94,7 +94,7 @@ app.post('/api/calculation', function(req, res) {
 
     if ((req.headers.randomvictim && req.headers.randomvictim ===true ) || (config.buggy && randomNumber > 19)){
         console.log("looks like a 19 bug");
-        res.status(500).send({ value: "[ b, u, g]", error: "looks like a 19 bug", host: OS.hostname(), remote: remoteAddress, version: config.version });
+        res.status(500).send({ value: [ 'b', 'u', 'g'], error: "looks like a 19 bug", host: OS.hostname(), remote: remoteAddress, version: config.version });
     }
     else{
         var remoteAddress = req.connection.remoteAddress;

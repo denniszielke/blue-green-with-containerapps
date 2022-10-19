@@ -12,6 +12,7 @@ module redis 'redis.bicep' = {
 module logging 'logging.bicep' = {
   name: 'container-app-logging'
   params: {
+    //location: 'eastus'
     logAnalyticsWorkspaceName: 'logs-${environmentName}'
     appInsightsName: 'appins-${environmentName}'
   }

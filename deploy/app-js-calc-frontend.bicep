@@ -7,7 +7,7 @@ param containerImage string
 param filesAccountName string
 param filesAccountKey  string
 
-resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
+resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-03-01' = {
   name: '${environmentName}/redis'
   properties: {
     componentType : 'state.redis'
@@ -48,9 +48,8 @@ resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprCom
 //   }
 // }
 
-resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
+resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
   name: 'js-calc-frontend'
-  kind: 'containerapp'
   location: location
   properties: {
     managedEnvironmentId: resourceId('Microsoft.App/managedEnvironments', environmentName)
@@ -81,7 +80,7 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-01-01-preview' = {
           image: containerImage
           name: 'js-calc-frontend'
           resources: {
-            cpu: '1'
+            cpu: 1
             memory: '2Gi'
           }
           probes: [

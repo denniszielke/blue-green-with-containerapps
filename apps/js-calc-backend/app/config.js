@@ -9,8 +9,8 @@ if (config.instrumentationKey && config.instrumentationKey == "dummyValue")
 }
 
 config.port = process.env.PORT || 8080;
-config.laggy = process.env.LAGGY;
-config.buggy = process.env.BUGGY;
+config.laggy = process.env.LAGGY || true;
+config.buggy = process.env.BUGGY || true;
 config.writepath = process.env.WRITEPATH;
 config.version = "default - latest";
 

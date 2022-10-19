@@ -32,7 +32,6 @@ module daprexplorer 'app-dapr-explorer.bicep' = {
   params: {
     containerImage: 'ghcr.io/${containerRegistryOwner}/container-apps/js-dapr-explorer:${explorerImageTag}'
     environmentName: environmentName
-    appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
   }
 }
 

@@ -1,6 +1,6 @@
 require('dotenv-extended').load();
 const config = require('./config');
-var appInsights = require("applicationinsights");
+const appInsights = require("applicationinsights");
 if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey)
     .setAutoDependencyCorrelation(true)
@@ -10,17 +10,17 @@ if (config.instrumentationKey){
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
     appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-frontend";
     appInsights.start();
-    var client = appInsights.defaultClient;
+    const client = appInsights.defaultClient;
     client.commonProperties = {
         slot: config.version
     };
 }
+
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
-const request = require('request');
 const OS = require('os');
-require('isomorphic-fetch');
+const axios = require('axios');
 
 var publicDir = require('path').join(__dirname, '/public');
 
@@ -52,35 +52,28 @@ app.get('/api/getappinsightskey', function(req, res) {
     }
 });
 
-app.post('/api/calculation', function(req, res) {
+app.post('/api/calculation', async (req, res, next) => {
     console.log("received frontend request:");
     console.log(req.headers);
-    var victim = false;
-    var targetNumber = req.headers.number.toString();
-    var randomvictim = Math.floor((Math.random() * 20) + 1);
+    let victim = false;
+    const targetNumber = req.headers.number.toString();
+    const randomvictim = Math.floor((Math.random() * 20) + 1);
     if (config.buggy && randomvictim){
         victim = true;
     }
 
     if (config.cacheEndPoint){
-       
-        var cacheGetOptions = { 
-            'url': config.cacheEndPoint + '/' + targetNumber,
-            'headers': {
-                'dapr-app-id': 'js-calc-frontend'
-            }
-        };    
         console.log("calling caches:");
-        console.log(cacheGetOptions);
-        request.get(cacheGetOptions, function(cacheErr, cacheRes, cacheBody) {
-
-            if (cacheErr){
-                console.log("error:");
-                console.log(cacheErr);
-                res.send({ value: "[ b, u, g]", error: "looks like a local cache issue", host: OS.hostname(), version: config.version });
-            } else {
-                console.log("cache result:");
-                
+        axios({
+            method: 'get',
+            url: config.cacheEndPoint + '/' + targetNumber,
+            headers: {    
+                'dapr-app-id': 'js-calc-frontend'
+            }})
+            .then(function (response) {
+                console.log("received cache response:");
+                console.log(response.data);
+                const cacheBody = response.data;
                 if (cacheBody != null && cacheBody.toString().length > 0 )
                 {   
                     console.log("cache hit");
@@ -91,98 +84,101 @@ app.post('/api/calculation', function(req, res) {
                 } else
                 {
                     console.log("cache miss");
-                    var formData = {
-                        received: new Date().toLocaleString(), 
-                        number: targetNumber
-                    };
-                    var options = { 
-                        'url': config.endpoint + '/api/calculation',
-                        'form': formData,
-                        'headers': {
+                    
+                    axios({
+                        method: 'post',
+                        url: config.endpoint + '/api/calculation',
+                        headers: {    
                             'number': targetNumber,
                             'randomvictim': victim,
                             'dapr-app-id': 'js-calc-frontend'
-                        }
-                    };    
-                    request.post(options, function(innererr, innerres, body) {
-                        if (innererr){
-                            console.log("calcu error:");
-                            console.log(innererr);
-                            res.send({ value: "[ b, u, g]", error: "looks like a local failure bug", host: OS.hostname(), version: config.version });
-                        }
-                        else {
-                            console.log("calculation result:");
-                            console.log(body);
-                            var calcResult = JSON.parse(body); 
-
-                            var response = { host: OS.hostname(), version: config.version, 
-                                backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
-                            console.log(response);
-
-                            var cacheData = '[{"key":"' + targetNumber + '","value":"'+ calcResult.value.toString() + '"}]';
-                            // cacheData ='[{ "key": "key1", "value": "value1"}]';
-                            var cacheSetOptions = { 
-                                'url': config.cacheEndPoint,
-                                'headers': {
-                                    'dapr-app-id': 'js-calc-frontend',
-                                    'Content-Type': 'application/json'
+                        }})
+                        .then(function (response) {
+                            console.log("received backend response:");
+                            console.log(response.data);
+                            const appResponse = {
+                                host: OS.hostname(), version: config.version, 
+                                backend: { host: response.data.host, version: response.data.version, value: response.data.value, remote: response.data.remote, timestamp: response.data.timestamp } 
+                            };
+                            res.send(appResponse);
+                            console.log("updating cache:");
+                            const cacheData = '[{"key":"' + targetNumber + '","value":"'+ response.data.value.toString() + '"}]';
+                            console.log(cacheData);
+                            axios({
+                                method: 'post',
+                                url: config.cacheEndPoint,
+                                headers: {    
+                                    'Content-Type': 'application/json',
+                                    'dapr-app-id': 'js-calc-frontend'
                                 },
-                                'data': cacheData
-                            };  
-                            console.log(cacheSetOptions);
-                            
-                            fetch(config.cacheEndPoint, {
-                                method: "POST",
-                                body: cacheData,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            }).then((response) => {
-                                if (!response.ok) {
-                                    throw "Failed to persist state.";
-                                }
-                        
-                                console.log("Successfully persisted state.");
-                                res.status(200).send();
-                            }).catch((error) => {
-                                console.log(error);
-                                res.status(500).send({message: error});
+                                data: cacheData
+                            }).then(function (response) {
+                                console.log("updated cache");
+                                console.log(response.data);
+                            }).catch(function (error) {
+                                console.log("failed to update cache:");
+                                console.log(error.response.data);
                             });
+        
+                        }).catch(function (error) {
+                            console.log("error:");
+                            console.log(error);
+                            const backend = { 
+                                host: error.response.data.host || "frontend", 
+                                version: error.response.data.version || "red", 
+                                value: error.response.data.value || [ 'b', 'u', 'g'], 
+                                timestamp: error.response.data.timestamp || ""
+                            };
+                            res.send({ backend: backend, error: "looks like a cache failure" + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+                        });
+                }
+                            
+                }).catch(function (error) {
+                    console.log("error:");
+                    console.log(error.response);
+                    console.log("data:");
+                    console.log(error.response.data);
+                    const backend = { 
+                        host: error.response.data.host || "frontend", 
+                        version: error.response.data.version || "red", 
+                        value: error.response.data.value || [ 'b', 'u', 'g'], 
+                        timestamp: error.response.data.timestamp || ""
+                    };
+                    res.send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+                });         
 
-                            console.log(response);
-                            res.send(response);
-                        }
-                    });   
-                } 
-            }
-        });   
-    }else{
-        var formData = {
-            received: new Date().toLocaleString(), 
-            number: req.headers.number
-        };
-        var options = { 
-            'url': config.endpoint + '/api/calculation',
-            'form': formData,
-            'headers': {
+    }
+    else{
+
+        axios({
+            method: 'post',
+            url: config.endpoint + '/api/calculation',
+            headers: {    
                 'number': req.headers.number,
-                'randomvictim': victim
-            }
-        };    
-        request.post(options, function(innererr, innerres, body) {
-            if (innererr){
+                'randomvictim': victim,
+                'dapr-app-id': 'js-calc-frontend'
+            }})
+            .then(function (response) {
+                console.log("received backend response:");
+                console.log(response.data);
+                const appResponse = {
+                    host: OS.hostname(), version: config.version, 
+                    backend: { host: response.data.host, version: response.data.version, value: response.data.value, remote: response.data.remote, timestamp: response.data.timestamp } 
+                };
+                res.send(appResponse);
+            }).catch(function (error) {
                 console.log("error:");
-                console.log(innererr);
-            }
-                        
-            var calcResult = JSON.parse(body); 
-
-            var response = { host: OS.hostname(), version: config.version, 
-                backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
-
-            console.log(response);
-            res.send(response);
-        });
+                console.log(error.response);
+                console.log("data:");
+                console.log(error.response.data);
+                const backend = { 
+                    host: error.response.data.host || "frontend", 
+                    version: error.response.data.version || "red", 
+                    value: error.response.data.value || [ 'b', 'u', 'g'], 
+                    timestamp: error.response.data.timestamp || ""
+                };
+                res.send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+            });
     }
     
 });
@@ -190,7 +186,7 @@ app.post('/api/calculation', function(req, res) {
 app.post('/api/dummy', function(req, res) {
     console.log("received dummy request:");
     console.log(req.headers);
-    res.send('42');
+    res.send({ value: "[ 42 ]", host: OS.hostname(), version: config.version });
 });
 
 console.log(config);

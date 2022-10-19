@@ -3,9 +3,8 @@ param location string = resourceGroup().location
 param appInsightsInstrumentationKey string
 param containerImage string
 
-resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
+resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
   name: 'js-calc-backend'
-  kind: 'containerapp'
   location: location
   properties: {
     managedEnvironmentId: resourceId('Microsoft.App/managedEnvironments', environmentName)
@@ -30,7 +29,7 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-01-01-preview' = {
           image: containerImage
           name: 'js-calc-backend'
           resources: {
-            cpu: '1'
+            cpu: 1
             memory: '2Gi'
           } 
           probes: [

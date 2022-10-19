@@ -4,7 +4,7 @@ set -e
 
 # infrastructure deployment properties
 DEPLOYMENT_NAME="$1" # here enter unique deployment name (ideally short and with letters for global uniqueness)
-LOCATION="westeurope"
+LOCATION="$2"
 
 if [ $(az group exists --name $DEPLOYMENT_NAME) = false ]; then
     echo "creating resource group $DEPLOYMENT_NAME..."
