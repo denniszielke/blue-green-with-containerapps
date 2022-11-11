@@ -1,6 +1,6 @@
 param environmentName string
 param location string = resourceGroup().location
-param appInsightsInstrumentationKey string
+param appInsightsConnectionString string
 param redisHost string
 param redisPassword string
 param containerImage string
@@ -139,8 +139,8 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
               value: 'http://localhost:3500/v1.0/invoke/js-calc-backend/method'
             }
             {
-              name: 'INSTRUMENTATIONKEY'
-              value: appInsightsInstrumentationKey
+              name: 'AIC_STRING'
+              value: appInsightsConnectionString
             }
             {
               name: 'CACHEENDPOINT'

@@ -30,3 +30,11 @@ module environment 'environment.bicep' = {
     appInsightsConnectionString: logging.outputs.appInsightsConnectionString
   }
 }
+
+// module frontdoor 'frontdoor.bicep' = {
+//   name: 'frontdoor'
+//   params: {
+//     frontdoorName: 'appfront'
+//     privateLinkServiceId:
+//   }
+// }

@@ -1,32 +1,31 @@
 const express = require('express');
-var bodyParser = require('body-parser');
 const fetch = require('isomorphic-fetch');
 const config = require('./config');
 
-var appInsights = require("applicationinsights");
-if (config.instrumentationKey){ 
-    appInsights.setup(config.instrumentationKey)
+if (config.aicstring){ 
+    appInsights.setup(config.aicstring)
     .setAutoDependencyCorrelation(true)
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true, true)
+    .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
-    .setAutoCollectPerformance(true)
+    .setAutoCollectConsole(true)
+    .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
-    appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-frontend";
+    appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-explorer";
     appInsights.start();
-    var client = appInsights.defaultClient;
-    client.commonProperties = {
+    appInsights.defaultClient.commonProperties = {
         slot: config.version
     };
 }
 
 const OS = require('os');
 const app = express();
-  
+app.use(express.json())
+
 var publicDir = require('path').join(__dirname, '/public');
 app.use(express.static(publicDir));
-
-// var urlencodedParser = bodyParser.urlencoded({ extended: false });
-var jsonParser = bodyParser.json();
 
 app.get('/ready', function(req, res) {
     var current = new Date();
@@ -38,7 +37,12 @@ app.get('/ready', function(req, res) {
 });
 
 app.get('/healthz', function(req, res) {
-    res.send('OK');
+    const data = {
+        uptime: process.uptime(),
+        message: 'Ok',
+        date: new Date()
+      }
+    res.status(200).send(data);
 });
 
 app.get('/ping', function(req, res) {
@@ -59,8 +63,8 @@ app.post('/ping', function(req, res) {
     res.send(pong);
 });
 
-// curl -X POST http://localhost:3000/api/calculation -H "Content-Type: application/json"  -d '{ "url": "http://10.0.1.4:8080/ip" }'
-app.post('/api/calculation', function(req, res) {
+// curl -X POST http://localhost:3000/api/calculate -H "Content-Type: application/json"  -d '{ "url": "http://10.0.1.4:8080/ip" }'
+app.post('/api/calculate', function(req, res) {
     console.log('received calcuation POST');
     console.log('Got body:', req.body);
     console.log('Got headers:', req.headers);

@@ -32,6 +32,7 @@ module daprexplorer 'app-dapr-explorer.bicep' = {
   params: {
     containerImage: 'ghcr.io/${containerRegistryOwner}/container-apps/js-dapr-explorer:${explorerImageTag}'
     environmentName: environmentName
+    appInsightsConnectionString: logging.outputs.appInsightsConnectionString
   }
 }
 
@@ -40,7 +41,7 @@ module jscalcbackend 'app-js-calc-backend.bicep' = {
   params: {
     containerImage: 'ghcr.io/${containerRegistryOwner}/container-apps/js-calc-backend:${calculatorImageTag}'
     environmentName: environmentName
-    appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
+    appInsightsConnectionString: logging.outputs.appInsightsConnectionString
   }
 }
 
@@ -49,13 +50,12 @@ module jscalcfrontend 'app-js-calc-frontend.bicep' = {
   params: {
     containerImage: 'ghcr.io/${containerRegistryOwner}/container-apps/js-calc-frontend:${calculatorImageTag}'
     environmentName: environmentName
-    appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
+    appInsightsConnectionString: logging.outputs.appInsightsConnectionString
     redisHost: redis.outputs.redisHost
     redisPassword: redis.outputs.redisPassword
     filesAccountName: storage.outputs.filesEndpoint
     filesAccountKey: storage.outputs.filesAccessKey
   }
 }
-
 
 // az deployment group create -g dzca15cgithub -f ./deploy/apps.bicep -p explorerImageTag=latest -p calculatorImageTag=latest  -p containerRegistryOwner=denniszielke

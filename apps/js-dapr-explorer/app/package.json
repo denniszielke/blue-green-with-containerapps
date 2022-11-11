@@ -9,9 +9,8 @@
   },
   "author": "dzielke",
   "dependencies": {
-    "express": "^4.17.2",
-    "applicationinsights": "^2.2.2",
-    "body-parser": "^1.19.1",
+    "express": "^4.18.2",
+    "applicationinsights": "^2.3.6",
     "isomorphic-fetch": "^3.0.0"
   },
   "license": "ISC"

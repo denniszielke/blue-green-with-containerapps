@@ -1,6 +1,7 @@
 param environmentName string
 param location string = resourceGroup().location
 param containerImage string
+param appInsightsConnectionString string
 
 resource daprexplorer 'Microsoft.App/containerapps@2022-03-01' = {
   name: 'js-explorer'
@@ -41,6 +42,10 @@ resource daprexplorer 'Microsoft.App/containerapps@2022-03-01' = {
             {
               name: 'HTTP_PORT'
               value: '3000'
+            }
+            {
+              name: 'AIC_STRING'
+              value: appInsightsConnectionString
             }
           ]
         }

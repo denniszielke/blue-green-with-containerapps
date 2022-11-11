@@ -3,10 +3,10 @@ const fs = require('fs');
 const OS = require('os');
 
 config.endpoint = process.env.ENDPOINT;
-config.instrumentationKey = process.env.INSTRUMENTATIONKEY;
-if (config.instrumentationKey && config.instrumentationKey == "dummyValue")
+config.aicstring = process.env.AIC_STRING;
+if (config.aicstring && config.aicstring == "dummyValue")
 {
-    config.instrumentationKey = null;
+    config.aicstring = null;
 }
 config.port = process.env.PORT || 8080;
 config.cacheEndPoint = process.env.CACHEENDPOINT;

@@ -15,4 +15,14 @@ else
 fi
 
 
-az deployment group create -g $DEPLOYMENT_NAME -f ../deploy/main.bicep -p internalOnly=false
+RESULT=$(az deployment group create -g $DEPLOYMENT_NAME -f ../deploy/main.bicep -p internalOnly=false --query properties.outputs.result)
+
+echo $RESULT
+
+#PRIVATE_LINK_ENDPOINT_CONNECTION_ID=$(echo $RESULT | jq -r '.value.privateLinkEndpointConnectionId')
+#FQDN=$(echo $RESULT | jq -r '.value.fqdn')
+
+#echo "Private link endpoint connection ID: $PRIVATE_LINK_ENDPOINT_CONNECTION_ID"
+#az network private-endpoint-connection approve --id $PRIVATE_LINK_ENDPOINT_CONNECTION_ID --description "Approved by deployment script"
+
+#echo "FrontDoor FQDN: https://$FQDN ---"

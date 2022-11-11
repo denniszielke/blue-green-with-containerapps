@@ -1,6 +1,6 @@
 param environmentName string
 param location string = resourceGroup().location
-param appInsightsInstrumentationKey string
+param appInsightsConnectionString string
 param containerImage string
 
 resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
@@ -74,8 +74,8 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
               value: 'frontend - blue'
             }
             {
-              name: 'INSTRUMENTATIONKEY'
-              value: appInsightsInstrumentationKey
+              name: 'AIC_STRING'
+              value: appInsightsConnectionString
             }
           ]
         }
