@@ -118,7 +118,7 @@ app.post('/api/calculate', async (req, res, next) => {
                         version: config.version, 
                         backend: { 
                             host: "cache", 
-                            version: rconfig.version, 
+                            version: config.version, 
                             values: cacheResult, 
                             remote: "cache", 
                             timestamp: endDate } 
