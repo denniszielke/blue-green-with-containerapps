@@ -105,7 +105,14 @@ app.post('/api/calculate', async (req, res, next) => {
                 {   
                     console.log("cache hit");
                     console.log(cacheBody);
-                    const serverResult = { timestamp: endDate, correlation: requestId, values: "[" + cacheBody + "]", host: OS.hostname(), remote: "cache", forwarded: forwardedFrom, version: config.version };
+                    var cacheResult = [];
+                    if (cacheBody.toString().includes(',')){
+                        cacheResult = cacheBody.split(',');
+                    }
+                    else{   
+                        cacheResult = [cacheBody];
+                    }
+                    const serverResult = { timestamp: endDate, correlation: requestId, values: cacheResult, host: OS.hostname(), remote: "cache", forwarded: forwardedFrom, version: config.version };
                     console.log(serverResult);
                     res.status(200).send(serverResult);
 
