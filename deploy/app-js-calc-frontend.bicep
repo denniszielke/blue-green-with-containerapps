@@ -87,7 +87,7 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
             {
               type: 'liveness'
               httpGet: {
-                path: '/ping'
+                path: '/healthz'
                 port: 8080
                 httpHeaders: [
                   {
@@ -102,7 +102,7 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
             {
               type: 'readiness'
               httpGet: {
-                path: '/ping'
+                path: '/healthz'
                 port: 8080
                 httpHeaders: [
                   {
@@ -126,10 +126,10 @@ resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
               name: 'PORT'
               value: '8080'
             }
-            {
-              name: 'WRITEPATH'
-              value: '/mnt/files/'
-            }
+            // {
+            //   name: 'WRITEPATH'
+            //   value: '/mnt/files/'
+            // }
             {
               name: 'VERSION'
               value: 'frontend - blue'

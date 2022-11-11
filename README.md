@@ -36,7 +36,7 @@ https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identit
 We will create a service principal and grant it permissions on a dedicated resource group
 
 ```
-DEPLOYMENT_NAME="dzca13cgithub" # here the deployment
+DEPLOYMENT_NAME="dzapps5" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
@@ -80,6 +80,16 @@ DEPLOYMENT_NAME="dzca13cgithub" # here the deployment
 RESOURCE_GROUP=$DEPLOYMENT_NAME # here enter the resources group
 LOCATION="canadacentral" # azure region can only be canadacentral or northeurope
 bash ./scripts/deploy-infra-bicep.sh $DEPLOYMENT_NAME $LOCATION
+```
+
+### Deployment of the apps via cli
+
+```
+GHUSER="denniszielke" 
+DEPLOYMENT_NAME="dzapps5" # here the deployment
+VERSION="latest" # here enter the resources group
+REGISTRY="$GHUSER"
+bash ./deploy-apps-bicep.sh $DEPLOYMENT_NAME $VERSION $REGISTRY
 ```
 
 ### Triggering blue/green deployments

@@ -36,7 +36,7 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
             {
               type: 'liveness'
               httpGet: {
-                path: '/ping'
+                path: '/healthz'
                 port: 8080
                 httpHeaders: [
                   {
@@ -51,7 +51,7 @@ resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
             {
               type: 'readiness'
               httpGet: {
-                path: '/ping'
+                path: '/healthz'
                 port: 8080
                 httpHeaders: [
                   {
