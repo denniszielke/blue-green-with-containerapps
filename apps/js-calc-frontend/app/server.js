@@ -112,9 +112,19 @@ app.post('/api/calculate', async (req, res, next) => {
                     else{   
                         cacheResult = [cacheBody];
                     }
-                    const serverResult = { timestamp: endDate, correlation: requestId, values: cacheResult, host: OS.hostname(), remote: "cache", forwarded: forwardedFrom, version: config.version };
-                    console.log(serverResult);
-                    res.status(200).send(serverResult);
+                    const appResponse = {
+                        timestamp: endDate, correlation: requestId,
+                        host: OS.hostname(), 
+                        version: config.version, 
+                        backend: { 
+                            host: "cache", 
+                            version: rconfig.version, 
+                            values: cacheResult, 
+                            remote: "cache", 
+                            timestamp: endDate } 
+                    };
+                    console.log(appResponse);
+                    res.status(200).send(appResponse);
 
                 } else
                 {
@@ -221,7 +231,7 @@ app.post('/api/calculate', async (req, res, next) => {
                         remote: response.data.remote, 
                         timestamp: response.data.timestamp } 
                 };
-                res.send(appResponse);
+                res.status(200).send(appResponse);
             }).catch(function (error) {
                 console.log("error:");
                 console.log(error.response);
@@ -234,7 +244,7 @@ app.post('/api/calculate', async (req, res, next) => {
                     values: error.response.data.values || [ 'b', 'u', 'g'], 
                     timestamp: error.response.data.timestamp || ""
                 };
-                res.send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+                res.status(200).send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
             });
     }
     
