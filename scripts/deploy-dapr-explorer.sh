@@ -63,8 +63,8 @@ name: $EXPLORER_APP_NAME
 resourceGroup: $RESOURCE_GROUP
 type: Microsoft.App/containerApps
 tags:
-    app: explorer
-    version: $VERSION
+  app: explorer
+  version: $VERSION
 properties:
     managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:

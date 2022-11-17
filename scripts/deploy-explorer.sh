@@ -47,8 +47,7 @@ name: $EXPLORER_APP_NAME
 resourceGroup: $RESOURCE_GROUP
 type: Microsoft.App/containerApps
 tags:
-    app: explorer
-    version: $VERSION
+  app: explorer
 properties:
     managedEnvironmentId: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/managedEnvironments/$CONTAINERAPPS_ENVIRONMENT_NAME
     configuration:
@@ -72,11 +71,30 @@ properties:
           - name: VERSION
             value: $VERSION
           resources:
-              cpu: 0.5
-              memory: 1Gi
+              cpu: 1
+              memory: 2Gi
+          probes:
+          - type: liveness
+            httpGet:
+              path: "/ready/1"
+              port: 3000
+            initialDelaySeconds: 7
+            periodSeconds: 3
+          - type: readiness
+            httpGet:
+              path: "/ready/20"
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          - type: startup
+            httpGet:
+              path: "/ready/20"
+              port: 3000
+            initialDelaySeconds: 3
+            periodSeconds: 3
         scale:
-          minReplicas: 0
-          maxReplicas: 4
+          minReplicas: 1
+          maxReplicas: 3
           rules:
           - name: httprule
             custom:
