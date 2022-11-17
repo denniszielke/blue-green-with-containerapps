@@ -21,19 +21,25 @@ if (config.aicstring){
 }
 
 const OS = require('os');
+const e = require('express');
 const app = express();
 app.use(express.json())
 
 var publicDir = require('path').join(__dirname, '/public');
 app.use(express.static(publicDir));
 
-app.get('/ready', function(req, res) {
-    var current = new Date();
-    var current = performance.now();
-    var timeDiff = current - launchTime;
-    timeDiff /= 1000; 
-    var seconds = Math.round(timeDiff);
-    res.send('OK');
+var startDate = new Date();
+
+app.get('/ready/:seconds', function(req, res) {
+    const seconds = req.params.seconds;
+    var waitTill = new Date(startDate.getTime() + seconds * 1000);
+    if(waitTill > new Date()){
+        res.status(500).send('Not ready yet');
+    }
+    else
+    {
+        res.send('Yes, I am ready');
+    }    
 });
 
 app.get('/healthz', function(req, res) {
@@ -76,7 +82,7 @@ app.post('/api/calculate', function(req, res) {
     res.send(pong);
 });
 
-app.post('/', jsonParser, (req, res) => {
+app.post('/', (req, res) => {
     console.log('Got body:', req.body);
 
     var url;
