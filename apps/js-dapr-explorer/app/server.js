@@ -35,7 +35,7 @@ app.get('/ready/:seconds', function(req, res) {
     var waitTill = new Date(startDate.getTime() + seconds * 1000);
     if(waitTill > new Date()){
         console.log("Not ready yet");
-        res.status(500).send('Not ready yet');
+        res.status(503).send('Not ready yet');
     }
     else
     {   console.log("Ready");
