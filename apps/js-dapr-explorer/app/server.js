@@ -1,6 +1,7 @@
 const express = require('express');
 const fetch = require('isomorphic-fetch');
 const config = require('./config');
+const client = require('prom-client');
 
 if (config.aicstring){ 
     appInsights.setup(config.aicstring)
@@ -29,10 +30,43 @@ var publicDir = require('path').join(__dirname, '/public');
 app.use(express.static(publicDir));
 
 var startDate = new Date();
+const register = new client.Registry();
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({
+    labels: { version: config.VERSION },
+  });
+
+const gaugeCounter = new client.Gauge({
+    name: 'http_calculation_requests',
+    help: 'Number of cache hits',
+    labelNames: ['method', 'statusCode', 'cache']
+  });
+
+register.registerMetric(gaugeCounter);
+
+// const httpRequestTimer = new client.Histogram({
+//     name: 'http_calculation_duration_seconds',
+//     help: 'Duration of HTTP requests in seconds',
+//     labelNames: ['method', 'route', 'code'],
+//     buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10] // 0.1 to 10 seconds
+//   });
+  
+// register.registerMetric(httpRequestTimer);
+
+app.get('/metrics', async (req, res) => {
+    // const end = httpRequestTimer.startTimer();
+    // Save reference to the path so we can record it when ending the timer
+    const route = req.route.path;
+    res.setHeader('Content-Type', register.contentType);
+    res.send(await register.metrics());
+    // end({ route, code: res.statusCode, method: req.method });
+});
 
 app.get('/ready/:seconds', function(req, res) {
     const seconds = req.params.seconds;
     var waitTill = new Date(startDate.getTime() + seconds * 1000);
+    gaugeCounter.inc({ method: 'ready', statusCode: '200' , cache: 'no'}); //, 100);
+
     if(waitTill > new Date()){
         console.log("Not ready yet");
         res.status(503).send('Not ready yet');
@@ -44,6 +78,7 @@ app.get('/ready/:seconds', function(req, res) {
 });
 
 app.get('/healthz', function(req, res) {
+    gaugeCounter.inc({ method: 'healthz', statusCode: '200' , cache: 'yes'}); //, 40);
     const data = {
         uptime: process.uptime(),
         message: 'Ok',

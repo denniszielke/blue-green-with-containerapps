@@ -40,7 +40,7 @@ EXPLORER_APP_VERSION="explorer $COLOR - $VERSION"
 
 EXPLORER_APP_ID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$EXPLORER_APP_NAME')].id" -o tsv)
 
-SUFFIX="$VERSION-1"
+SUFFIX="$VERSION-3"
 
 cat <<EOF > containerapp.yaml
 kind: containerapp
@@ -86,7 +86,7 @@ properties:
             periodSeconds: 3
           - type: readiness
             httpGet:
-              path: "/ready/1"
+              path: "/ready/20"
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 3
