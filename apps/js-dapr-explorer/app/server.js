@@ -2,6 +2,7 @@ const express = require('express');
 const fetch = require('isomorphic-fetch');
 const config = require('./config');
 const client = require('prom-client');
+const appInsights = require("applicationinsights");
 
 if (config.aicstring){ 
     appInsights.setup(config.aicstring)
