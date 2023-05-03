@@ -1,5 +1,5 @@
 const express = require('express');
-const fetch = require('isomorphic-fetch');
+const axios = require('axios');
 const config = require('./config');
 const client = require('prom-client');
 const appInsights = require("applicationinsights");
@@ -154,24 +154,23 @@ app.post('/', (req, res) => {
         console.log("using url " + url);
     }
 
-    fetch(url, {
+    axios({
         method: req.body.action,
+        url: url,
         headers: {
             "Content-Type": "application/json"
         }
     }).then((response) => {
-        if (!response.ok) {
-            console.log("Failed to call");
-            res.sendStatus(response.status);
+        if (response.status != 200) {
+            console.log("Failed to call" + response.status);
+            // res.sendStatus(response.status);
         }
-        return response.json();        
-    }).then((text) => {
-        console.log(text);
-        res.status(200).send(text);
+        console.log(response.data);
+        res.status(response.status).send(response.data);      
     }).catch((error) => {
         console.log("failed to call " + url);
         console.log(error);
-        res.status(200).send(error);
+        res.send(error);
         // res.status(500).send({message: error});
     });
 }); 
