@@ -84,7 +84,27 @@ app.get('/healthz', function(req, res) {
         uptime: process.uptime(),
         message: 'Ok',
         date: new Date()
-      }
+      };
+    res.status(200).send(data);
+});
+
+app.head('/head', function(req, res) {
+    gaugeCounter.inc({ method: 'head', statusCode: '200' , cache: 'yes'}); //, 40);
+    const data = {
+        uptime: process.uptime(),
+        message: 'Ok',
+        date: new Date()
+      };
+    res.status(200).send(data);
+});
+
+app.delete('/delete', function(req, res) {
+    gaugeCounter.inc({ method: 'delete', statusCode: '200' , cache: 'yes'}); //, 40);
+    const data = {
+        uptime: process.uptime(),
+        message: 'Ok',
+        date: new Date()
+      };
     res.status(200).send(data);
 });
 
@@ -144,7 +164,6 @@ app.post('/', (req, res) => {
             console.log("Failed to call");
             res.sendStatus(response.status);
         }
-        // var text =
         return response.json();        
     }).then((text) => {
         console.log(text);
@@ -152,7 +171,8 @@ app.post('/', (req, res) => {
     }).catch((error) => {
         console.log("failed to call " + url);
         console.log(error);
-        res.status(500).send({message: error});
+        res.status(200).send(error);
+        // res.status(500).send({message: error});
     });
 }); 
 

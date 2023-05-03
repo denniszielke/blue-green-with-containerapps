@@ -16,10 +16,14 @@
           <label for="url">Url (absolute url or relative dapr invoke starting after /v1.0/invoke/ providing dapr-app-id/method/methodname</label>
           <input type="text" class="form-control" id="url" aria-describedby="urlHelp" placeholder="Enter url" value="http://localhost:3000/ping" name="url">
         </div>
-        <button type="button" id="post-url" class="btn btn-primary">Post url</button>
-        <button type="button" id="get-url" class="btn btn-primary">Get url</button>
-        <button type="button" id="invoke-dapr-get" class="btn btn-primary">Invoke dapr Get</button>
-        <button type="button" id="invoke-dapr-post" class="btn btn-primary">Invoke dapr Post</button>
+        <button type="button" id="post-url" class="btn btn-primary">POST url</button>
+        <button type="button" id="get-url" class="btn btn-primary">GET url</button>
+        <button type="button" id="head-url" class="btn btn-primary">HEAD url</button>
+        <button type="button" id="delete-url" class="btn btn-primary">DELETE url</button>
+        <button type="button" id="invoke-dapr-get" class="btn btn-primary">Invoke dapr GET</button>
+        <button type="button" id="invoke-dapr-post" class="btn btn-primary">Invoke dapr POST</button>
+        <button type="button" id="invoke-dapr-head" class="btn btn-primary">Invoke dapr HEAD</button>
+        <button type="button" id="invoke-dapr-delete" class="btn btn-primary">Invoke dapr DELETE</button>
       </form>
 
       <div class="row">
