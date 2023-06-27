@@ -48,13 +48,14 @@ resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprCom
 //   }
 // }
 
-resource jscalcfrontend 'Microsoft.App/containerapps@2022-03-01' = {
+resource jscalcfrontend 'Microsoft.App/containerapps@2022-11-01-preview' = {
   name: 'js-calc-frontend'
   location: location
   properties: {
     managedEnvironmentId: resourceId('Microsoft.App/managedEnvironments', environmentName)
+    workloadProfileName: 'consumption'
     configuration: {
-      activeRevisionsMode: 'single'
+      activeRevisionsMode: 'multiple'
       ingress: {
         external: true
         targetPort: 8080

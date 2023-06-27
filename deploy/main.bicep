@@ -2,6 +2,13 @@ param location string = resourceGroup().location
 param environmentName string = 'env-${resourceGroup().name}'
 param internalOnly bool = false
 
+module vnet 'vnet.bicep' = {
+  name: 'vnet'
+  params: {
+    location: location
+  }
+}
+
 module redis 'redis.bicep' = {
   name: 'container-app-redis'
   params: {
@@ -12,7 +19,7 @@ module redis 'redis.bicep' = {
 module logging 'logging.bicep' = {
   name: 'container-app-logging'
   params: {
-    location: 'eastus'
+    location: location
     logAnalyticsWorkspaceName: 'logs-${environmentName}'
     appInsightsName: 'appins-${environmentName}'
   }

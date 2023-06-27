@@ -3,13 +3,14 @@ param location string = resourceGroup().location
 param containerImage string
 param appInsightsConnectionString string
 
-resource daprexplorer 'Microsoft.App/containerapps@2022-03-01' = {
+resource daprexplorer 'Microsoft.App/containerapps@2022-11-01-preview' = {
   name: 'js-explorer'
   location: location
   properties: {
     managedEnvironmentId: resourceId('Microsoft.App/managedEnvironments', environmentName)
+    workloadProfileName: 'consumption'
     configuration: {
-      activeRevisionsMode: 'single'
+      activeRevisionsMode: 'multiple'
       ingress: {
         external: true
         targetPort: 3000

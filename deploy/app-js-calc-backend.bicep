@@ -3,13 +3,14 @@ param location string = resourceGroup().location
 param appInsightsConnectionString string
 param containerImage string
 
-resource jscalcbackend 'Microsoft.App/containerapps@2022-03-01' = {
+resource jscalcbackend 'Microsoft.App/containerapps@2022-11-01-preview' = {
   name: 'js-calc-backend'
   location: location
   properties: {
     managedEnvironmentId: resourceId('Microsoft.App/managedEnvironments', environmentName)
+    workloadProfileName: 'consumption'
     configuration: {
-      activeRevisionsMode: 'single'
+      activeRevisionsMode: 'multiple'
       ingress: {
         external: true
         targetPort: 8080
